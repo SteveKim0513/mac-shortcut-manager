@@ -23,7 +23,7 @@ macOS 단축어 앱과 비교해 이 서비스가 강해질 수 있는 지점을
 
 구현 난이도 순(쉬운 것부터): `schedule`(자체 타이머) → `login`/`wake`(Electron `powerMonitor`) → `folder`(이미 있는 chokidar 인프라 재사용) → `app-launch`/`app-quit`(`NSWorkspace` 알림, 네이티브 연동 필요) → `wifi-connect`(폴링 기반, 배터리 비용 고려) → `battery-below`/`power-connected`(`powerMonitor` + `pmset` 폴링).
 
-## 채택: 스크립트용 입력 도우미
+## 채택: 스크립트용 입력 도우미 ✅ (구현 완료)
 
 Shortcuts의 "입력받기" 액션에 대응. 앱에 새 UI를 만드는 대신, 스크립트가 호출할 수 있는 작은 CLI 3개를 앱과 함께 제공한다(AppleScript `display dialog`/`choose from list` 백엔드, 또는 우리 앱이 직접 처리):
 
@@ -49,6 +49,6 @@ msm-confirm "정말 삭제할까요?" && rm "$file"
 
 1. ~~`schedule` / `login` / `wake` 트리거~~ ✅
 2. ~~`folder` 트리거~~ ✅
-3. 입력 도우미 3종 (`msm-ask`/`msm-choose`/`msm-confirm`)
+3. ~~입력 도우미 3종 (`msm-ask`/`msm-choose`/`msm-confirm`)~~ ✅
 4. `app-launch`/`wifi-connect`/`battery-below` 등 나머지 트리거
 5. Finder Quick Action (중기)

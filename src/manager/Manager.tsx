@@ -207,7 +207,9 @@ export default function Manager() {
             <div className="manager-hint">
               헤더 주석(# @msm-name / @msm-icon / @msm-description / @msm-category)으로 나머지 정보를
               설정합니다. 단축키는 위 버튼으로 등록하고, 자동 실행은 <code># @msm-trigger: schedule 09:00</code>
-              처럼 스크립트에 직접 적어주세요 (schedule HH:MM / login / wake / folder ~/경로).
+              처럼 스크립트에 직접 적어주세요 (schedule HH:MM / login / wake / folder ~/경로). 스크립트 안에서
+              사용자 입력이 필요하면 <code>msm-ask</code>/<code>msm-choose</code>/<code>msm-confirm</code>을
+              바로 호출할 수 있습니다.
             </div>
             <CodeEditor value={content} onChange={setContent} onSave={() => void handleSave()} />
             {runResult && (

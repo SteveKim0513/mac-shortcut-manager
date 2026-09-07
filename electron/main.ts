@@ -11,6 +11,7 @@ import { createTrayIcon } from './tray-icon';
 import { loadSettings, saveSettings, type AppSettings } from './settings';
 import { initAutoUpdate, checkForUpdatesManually, installUpdate } from './updater';
 import { triggerEngine } from './triggers';
+import { installHelpers } from './helpers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -193,6 +194,7 @@ function createTray() {
 app.whenReady().then(() => {
   if (!gotSingleInstanceLock) return; // a second instance is quitting — set nothing up
 
+  installHelpers();
   registry.init();
   registry.onUpdate((list) => {
     for (const win of BrowserWindow.getAllWindows()) win.webContents.send('shortcuts:updated', list);

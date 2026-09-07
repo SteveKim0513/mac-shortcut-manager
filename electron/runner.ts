@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import { helpersDir } from './helpers';
 import type { RunResult } from '../shared/types';
 
 const TIMEOUT_MS = 30_000;
@@ -15,8 +16,12 @@ export function runScript(filePath: string, args: string[] = []): Promise<RunRes
     }
 
     // Extra args are how a `folder` trigger hands the script the path of
-    // the file that just appeared — the script reads it as $1.
-    const child = spawn('/bin/zsh', [filePath, ...args], { timeout: TIMEOUT_MS });
+    // the file that just appeared — the script reads it as $1. Prepending
+    // helpersDir() to PATH is what makes `msm-ask` etc. callable by name.
+    const child = spawn('/bin/zsh', [filePath, ...args], {
+      timeout: TIMEOUT_MS,
+      env: { ...process.env, PATH: `${helpersDir()}:${process.env.PATH ?? ''}` },
+    });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (chunk: Buffer) => {
