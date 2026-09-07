@@ -10,6 +10,7 @@ import { scriptsDir } from './paths';
 import { createTrayIcon } from './tray-icon';
 import { loadSettings, saveSettings, type AppSettings } from './settings';
 import { initAutoUpdate, checkForUpdatesManually, installUpdate } from './updater';
+import { triggerEngine } from './triggers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -195,7 +196,12 @@ app.whenReady().then(() => {
   registry.init();
   registry.onUpdate((list) => {
     for (const win of BrowserWindow.getAllWindows()) win.webContents.send('shortcuts:updated', list);
+    triggerEngine.sync(list);
   });
+  triggerEngine.start();
+  // A short delay so the initial folder scan (async) has populated the
+  // trigger list before "login" triggers are evaluated.
+  setTimeout(() => triggerEngine.fireLoginTriggers(), 2000);
 
   applyLoginAndDockSettings();
   buildAppMenu();
@@ -218,6 +224,7 @@ app.on('window-all-closed', () => {});
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   registry.dispose();
+  triggerEngine.dispose();
 });
 
 ipcMain.handle('shortcuts:list', () => registry.list());

@@ -192,9 +192,22 @@ export default function Manager() {
               />
               {selected.hotkeyError && <span className="manager-hint warn">{selected.hotkeyError}</span>}
             </div>
+            {selected.triggers.length > 0 && (
+              <div className="manager-meta-row">
+                <span className="manager-meta-label">트리거</span>
+                <div className="manager-trigger-list">
+                  {selected.triggers.map((t, i) => (
+                    <span key={i} className="kbd">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="manager-hint">
               헤더 주석(# @msm-name / @msm-icon / @msm-description / @msm-category)으로 나머지 정보를
-              설정합니다. 단축키는 위 버튼으로 등록하세요.
+              설정합니다. 단축키는 위 버튼으로 등록하고, 자동 실행은 <code># @msm-trigger: schedule 09:00</code>
+              처럼 스크립트에 직접 적어주세요 (schedule HH:MM / login / wake / folder ~/경로).
             </div>
             <CodeEditor value={content} onChange={setContent} onSave={() => void handleSave()} />
             {runResult && (

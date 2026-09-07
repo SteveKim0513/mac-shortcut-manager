@@ -202,6 +202,19 @@
   color: var(--danger);
 }
 
+.manager-hint code {
+  font-family: var(--font-mono);
+  background: var(--surface-2);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.manager-trigger-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .manager-meta-row {
   display: flex;
   align-items: center;

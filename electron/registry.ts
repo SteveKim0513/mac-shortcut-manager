@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import chokidar, { type FSWatcher } from 'chokidar';
-import { globalShortcut, Notification } from 'electron';
+import { globalShortcut } from 'electron';
 import { parseScript } from './parser';
 import { runScript } from './runner';
 import { scriptsDir } from './paths';
-import type { ShortcutMeta, RunResult } from '../shared/types';
+import { notifyRunResult } from './notify';
+import type { ShortcutMeta } from '../shared/types';
 
 const EXAMPLE_SCRIPT = `#!/bin/zsh
 # @msm-name: 다크모드 토글
@@ -21,14 +22,6 @@ function ensureScriptsDir() {
   if (!hasAny) {
     fs.writeFileSync(path.join(scriptsDir, 'dark-mode-toggle.sh'), EXAMPLE_SCRIPT, { mode: 0o755 });
   }
-}
-
-function notifyRunResult(meta: ShortcutMeta, result: RunResult) {
-  const title = result.success ? `${meta.icon ?? '✅'} ${meta.name}` : `⚠️ ${meta.name} 실패`;
-  const body = result.success
-    ? result.stdout.trim().slice(0, 200) || '실행 완료'
-    : result.stderr.trim().slice(0, 200) || `종료 코드 ${result.code}`;
-  new Notification({ title, body }).show();
 }
 
 type Listener = (list: ShortcutMeta[]) => void;

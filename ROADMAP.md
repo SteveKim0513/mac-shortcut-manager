@@ -2,9 +2,11 @@
 
 macOS 단축어 앱과 비교해 이 서비스가 강해질 수 있는 지점을 정리한다. [PRINCIPLES.md](PRINCIPLES.md)의 "script-only" 원칙을 지키는 것만 채택한다 — 즉 실행 단위는 언제나 스크립트 하나이고, 새 기능은 `# @msm-*` 주석 한두 줄로 설명 가능해야 한다.
 
-## 채택: 자동 트리거
+## 채택: 자동 트리거 ✅ (`schedule`/`login`/`wake`/`folder` 구현 완료)
 
 지금은 "수동 실행"(단축키 누르기, 팔레트에서 클릭)만 있고, Shortcuts의 "개인 자동화"에 해당하는 "조건이 되면 알아서 실행"이 없다. 이게 가장 큰 격차이자, script-only 원칙과 정확히 맞아떨어지는 확장이다 — 트리거는 "언제"만 정의하고 "무엇"은 여전히 스크립트 하나다.
+
+`electron/triggers.ts`의 `TriggerEngine`이 담당. `schedule`/`login`/`wake`/`folder` 네 가지는 실제로 동작 확인됨(폴더에 파일 추가 → 스크립트가 그 경로를 `$1`로 받아 실행, 재시작 시 `login` 트리거 실행, 지정 시각에 `schedule` 실행). `app-launch`/`wifi-connect`/`battery-below`/`power-connected`는 아직 미구현.
 
 `@msm-hotkey`와 동일한 패턴으로 `@msm-trigger` 주석을 추가(한 스크립트에 여러 줄 가능):
 
@@ -45,8 +47,8 @@ msm-confirm "정말 삭제할까요?" && rm "$file"
 
 ## 진행 순서 제안
 
-1. `schedule` / `login` / `wake` 트리거 (엔진 인프라, 가장 큰 가치 대비 낮은 비용)
-2. `folder` 트리거 (기존 워처 재사용)
+1. ~~`schedule` / `login` / `wake` 트리거~~ ✅
+2. ~~`folder` 트리거~~ ✅
 3. 입력 도우미 3종 (`msm-ask`/`msm-choose`/`msm-confirm`)
 4. `app-launch`/`wifi-connect`/`battery-below` 등 나머지 트리거
 5. Finder Quick Action (중기)

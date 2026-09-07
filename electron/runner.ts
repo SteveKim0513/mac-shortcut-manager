@@ -5,7 +5,7 @@ import type { RunResult } from '../shared/types';
 const TIMEOUT_MS = 30_000;
 const OUTPUT_CAP = 4000;
 
-export function runScript(filePath: string): Promise<RunResult> {
+export function runScript(filePath: string, args: string[] = []): Promise<RunResult> {
   return new Promise((resolve) => {
     try {
       fs.chmodSync(filePath, 0o755);
@@ -14,7 +14,9 @@ export function runScript(filePath: string): Promise<RunResult> {
       // themselves — either way this is best-effort, not load-bearing.
     }
 
-    const child = spawn('/bin/zsh', [filePath], { timeout: TIMEOUT_MS });
+    // Extra args are how a `folder` trigger hands the script the path of
+    // the file that just appeared — the script reads it as $1.
+    const child = spawn('/bin/zsh', [filePath, ...args], { timeout: TIMEOUT_MS });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (chunk: Buffer) => {
