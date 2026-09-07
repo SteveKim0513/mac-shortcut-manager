@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import { helpersDir } from './helpers';
 import type { RunResult } from '../shared/types';
 
@@ -18,8 +19,12 @@ export function runScript(filePath: string, args: string[] = []): Promise<RunRes
     // Extra args are how a `folder` trigger hands the script the path of
     // the file that just appeared — the script reads it as $1. Prepending
     // helpersDir() to PATH is what makes `msm-ask` etc. callable by name.
+    // Electron's own cwd (an app-bundle path, not anything script-relevant)
+    // would otherwise leak into any script that uses a relative path — the
+    // home directory is a saner default, closer to what a shell prompt starts in.
     const child = spawn('/bin/zsh', [filePath, ...args], {
       timeout: TIMEOUT_MS,
+      cwd: os.homedir(),
       env: { ...process.env, PATH: `${helpersDir()}:${process.env.PATH ?? ''}` },
     });
     let stdout = '';

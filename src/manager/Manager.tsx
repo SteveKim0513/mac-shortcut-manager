@@ -5,6 +5,8 @@ import HotkeyRecorder from './HotkeyRecorder';
 import CodeEditor from './CodeEditor';
 import NewShortcutDialog from './NewShortcutDialog';
 import AiAssistDialog from './AiAssistDialog';
+import PresetBrowserDialog from './PresetBrowserDialog';
+import type { Preset } from '../../shared/presets';
 import ConfirmDialog from './ConfirmDialog';
 import SettingsDialog from './SettingsDialog';
 import UpdateStatusPopup from './UpdateStatusPopup';
@@ -21,6 +23,7 @@ export default function Manager() {
   const [running, setRunning] = useState(false);
   const [creating, setCreating] = useState(false);
   const [aiAssistOpen, setAiAssistOpen] = useState(false);
+  const [presetsOpen, setPresetsOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
@@ -123,6 +126,13 @@ export default function Manager() {
     setSelectedId(meta.id);
   }
 
+  async function handlePresetCreate(preset: Preset) {
+    const meta = await window.msm.createShortcut(preset.name);
+    await window.msm.saveShortcut(meta.id, preset.script);
+    setPresetsOpen(false);
+    setSelectedId(meta.id);
+  }
+
   async function handleSetHotkey(next: string | null) {
     if (!selectedId) return;
     await window.msm.setHotkey(selectedId, next);
@@ -144,6 +154,9 @@ export default function Manager() {
             </button>
             <button className="manager-icon-btn" title="AI로 만들기" onClick={() => setAiAssistOpen(true)}>
               🤖
+            </button>
+            <button className="manager-icon-btn" title="프리셋에서 만들기" onClick={() => setPresetsOpen(true)}>
+              📦
             </button>
             <button className="manager-icon-btn" title="설정" onClick={() => setSettingsOpen(true)}>
               ⚙
@@ -243,6 +256,12 @@ export default function Manager() {
         <AiAssistDialog
           onCreate={(name, code) => void handleAiCreate(name, code)}
           onCancel={() => setAiAssistOpen(false)}
+        />
+      )}
+      {presetsOpen && (
+        <PresetBrowserDialog
+          onCreate={(preset) => void handlePresetCreate(preset)}
+          onCancel={() => setPresetsOpen(false)}
         />
       )}
       {confirmingDelete && selected && (
