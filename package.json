@@ -61,7 +61,7 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "imaginefutures",
+      "owner": "SteveKim0513",
       "repo": "mac-shortcut-manager"
     }
   }
