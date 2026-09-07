@@ -5,3 +5,9 @@ node_modules/
 *.log
 .DS_Store
 /build/*.iconset/
+
+# Local Claude Code personal overrides (not shared)
+.claude/settings.local.json
+
+# Unrelated stray screenshots dropped in the project dir
+/upload-img/

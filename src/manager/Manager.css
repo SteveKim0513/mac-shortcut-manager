@@ -16,7 +16,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 14px 8px;
+  /* Left padding clears macOS's hiddenInset traffic-light buttons, which
+     float at a fixed position over window content, not in reserved space. */
+  padding: 14px 14px 8px 78px;
+  min-height: 38px;
+  -webkit-app-region: drag;
+}
+
+.manager-sidebar-header button {
+  -webkit-app-region: no-drag;
 }
 
 .manager-sidebar-header h1 {
@@ -138,6 +146,11 @@
   gap: 8px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--hairline);
+  -webkit-app-region: drag;
+}
+
+.manager-toolbar button {
+  -webkit-app-region: no-drag;
 }
 
 .manager-toolbar-title {
