@@ -342,6 +342,70 @@
   border-color: var(--accent);
 }
 
+.ai-dialog {
+  width: 480px;
+}
+
+.ai-step {
+  margin-bottom: 16px;
+}
+
+.ai-step-label {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+
+.dialog-textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 8px 10px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  outline: none;
+  resize: vertical;
+}
+
+.dialog-textarea:focus {
+  border-color: var(--accent);
+}
+
+.ai-code-area {
+  min-height: 140px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.ai-step-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ai-step-actions button {
+  border: 1px solid var(--hairline);
+  background: var(--surface-3);
+  color: var(--ink-muted);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.ai-step-actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+.ai-step-actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .dialog-actions {
   display: flex;
   justify-content: flex-end;

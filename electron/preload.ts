@@ -47,6 +47,7 @@ const api = {
     ipcRenderer.on('settings:open', listener);
     return () => ipcRenderer.off('settings:open', listener);
   },
+  openExternal: (url: string): void => ipcRenderer.send('shell:openExternal', url),
 };
 
 export type MsmApi = typeof api;

@@ -269,6 +269,12 @@ ipcMain.on('palette:hide', () => paletteWindow?.hide());
 
 ipcMain.on('manager:open', () => createManagerWindow());
 
+const EXTERNAL_URL_ALLOWLIST = [/^https:\/\/chatgpt\.com\//, /^https:\/\/claude\.ai\//];
+
+ipcMain.on('shell:openExternal', (_e, url: string) => {
+  if (EXTERNAL_URL_ALLOWLIST.some((re) => re.test(url))) void shell.openExternal(url);
+});
+
 ipcMain.handle('settings:get', () => settings);
 
 ipcMain.handle('settings:set', (_e, partial: Partial<AppSettings>) => {

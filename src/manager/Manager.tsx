@@ -4,6 +4,7 @@ import type { UpdateStatus } from '../../electron/updater';
 import HotkeyRecorder from './HotkeyRecorder';
 import CodeEditor from './CodeEditor';
 import NewShortcutDialog from './NewShortcutDialog';
+import AiAssistDialog from './AiAssistDialog';
 import ConfirmDialog from './ConfirmDialog';
 import SettingsDialog from './SettingsDialog';
 import UpdateStatusPopup from './UpdateStatusPopup';
@@ -19,6 +20,7 @@ export default function Manager() {
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [aiAssistOpen, setAiAssistOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
@@ -111,6 +113,16 @@ export default function Manager() {
     setSelectedId(meta.id);
   }
 
+  async function handleAiCreate(name: string, code: string) {
+    // Reuses the plain create+save IPC pair instead of a new backend
+    // path — the template content createShortcut writes is immediately
+    // overwritten with the pasted script.
+    const meta = await window.msm.createShortcut(name);
+    await window.msm.saveShortcut(meta.id, code);
+    setAiAssistOpen(false);
+    setSelectedId(meta.id);
+  }
+
   async function handleSetHotkey(next: string | null) {
     if (!selectedId) return;
     await window.msm.setHotkey(selectedId, next);
@@ -129,6 +141,9 @@ export default function Manager() {
           <div className="manager-sidebar-actions">
             <button className="manager-new-btn" onClick={() => setCreating(true)}>
               + 새로 만들기
+            </button>
+            <button className="manager-icon-btn" title="AI로 만들기" onClick={() => setAiAssistOpen(true)}>
+              🤖
             </button>
             <button className="manager-icon-btn" title="설정" onClick={() => setSettingsOpen(true)}>
               ⚙
@@ -224,6 +239,12 @@ export default function Manager() {
       </main>
 
       {creating && <NewShortcutDialog onCreate={(name) => void handleCreateSubmit(name)} onCancel={() => setCreating(false)} />}
+      {aiAssistOpen && (
+        <AiAssistDialog
+          onCreate={(name, code) => void handleAiCreate(name, code)}
+          onCancel={() => setAiAssistOpen(false)}
+        />
+      )}
       {confirmingDelete && selected && (
         <ConfirmDialog
           message={`"${selected.name}"을(를) 삭제할까요? 이 작업은 되돌릴 수 없습니다.`}
