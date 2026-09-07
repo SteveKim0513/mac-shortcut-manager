@@ -10,6 +10,7 @@ import type { Preset } from '../../shared/presets';
 import ConfirmDialog from './ConfirmDialog';
 import SettingsDialog from './SettingsDialog';
 import UpdateStatusPopup from './UpdateStatusPopup';
+import Toast from './Toast';
 import './Manager.css';
 
 const UNCATEGORIZED = '미분류';
@@ -27,6 +28,15 @@ export default function Manager() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // Every action taken inside this window shows some visible confirmation —
+  // a run shows a system notification (electron/notify.ts, from main), an
+  // edit/create/delete shows this in-app toast.
+  function notify(message: string) {
+    setToast(message);
+    setTimeout(() => setToast((current) => (current === message ? null : current)), 2500);
+  }
 
   useEffect(() => {
     window.msm.listShortcuts().then((list) => {
@@ -91,6 +101,7 @@ export default function Manager() {
     if (!selectedId) return;
     await window.msm.saveShortcut(selectedId, content);
     setSavedContent(content);
+    notify('저장됨');
   }
 
   async function handleRun() {
@@ -104,16 +115,19 @@ export default function Manager() {
   }
 
   async function handleConfirmDelete() {
-    if (!selectedId) return;
+    if (!selectedId || !selected) return;
+    const name = selected.name;
     await window.msm.deleteShortcut(selectedId);
     setSelectedId(null);
     setConfirmingDelete(false);
+    notify(`삭제됨: ${name}`);
   }
 
   async function handleCreateSubmit(name: string) {
     const meta = await window.msm.createShortcut(name);
     setCreating(false);
     setSelectedId(meta.id);
+    notify(`단축어 생성됨: ${meta.name}`);
   }
 
   async function handleAiCreate(name: string, code: string) {
@@ -124,6 +138,7 @@ export default function Manager() {
     await window.msm.saveShortcut(meta.id, code);
     setAiAssistOpen(false);
     setSelectedId(meta.id);
+    notify(`AI로 단축어 생성됨: ${meta.name}`);
   }
 
   async function handlePresetCreate(preset: Preset) {
@@ -131,6 +146,7 @@ export default function Manager() {
     await window.msm.saveShortcut(meta.id, preset.script);
     setPresetsOpen(false);
     setSelectedId(meta.id);
+    notify(`프리셋으로 생성됨: ${preset.name}`);
   }
 
   async function handleSetHotkey(next: string | null) {
@@ -141,6 +157,7 @@ export default function Manager() {
     const fresh = await window.msm.readShortcut(selectedId);
     setContent(fresh);
     setSavedContent(fresh);
+    notify(next ? `단축키 등록됨: ${next}` : '단축키 해제됨');
   }
 
   return (
@@ -272,7 +289,11 @@ export default function Manager() {
         />
       )}
       {settingsOpen && (
-        <SettingsDialog onClose={() => setSettingsOpen(false)} onCheckForUpdates={() => void window.msm.checkForUpdates()} />
+        <SettingsDialog
+          onClose={() => setSettingsOpen(false)}
+          onCheckForUpdates={() => void window.msm.checkForUpdates()}
+          onSaved={notify}
+        />
       )}
       {updateStatus && (
         <UpdateStatusPopup
@@ -282,6 +303,7 @@ export default function Manager() {
           onRetry={() => void window.msm.checkForUpdates()}
         />
       )}
+      {toast && <Toast message={toast} />}
     </div>
   );
 }

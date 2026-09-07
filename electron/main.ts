@@ -12,6 +12,7 @@ import { loadSettings, saveSettings, type AppSettings } from './settings';
 import { initAutoUpdate, checkForUpdatesManually, installUpdate } from './updater';
 import { triggerEngine } from './triggers';
 import { installHelpers } from './helpers';
+import { notifyRunResult } from './notify';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -231,7 +232,16 @@ app.on('will-quit', () => {
 
 ipcMain.handle('shortcuts:list', () => registry.list());
 
-ipcMain.handle('shortcuts:run', (_e, id: string) => runScript(id));
+ipcMain.handle('shortcuts:run', async (_e, id: string) => {
+  const result = await runScript(id);
+  // Every run path — hotkey, trigger, palette, and this one (manager
+  // button / palette) — always surfaces a system notification. The
+  // palette in particular hides itself immediately on run, so without
+  // this there would be no feedback at all for that path.
+  const meta = registry.list().find((m) => m.id === id);
+  if (meta) notifyRunResult(meta, result);
+  return result;
+});
 
 ipcMain.handle('shortcuts:read', (_e, id: string) => fs.readFileSync(id, 'utf8'));
 

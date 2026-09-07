@@ -5,9 +5,10 @@ import HotkeyRecorder from './HotkeyRecorder';
 interface Props {
   onClose: () => void;
   onCheckForUpdates: () => void;
+  onSaved: (message: string) => void;
 }
 
-export default function SettingsDialog({ onClose, onCheckForUpdates }: Props) {
+export default function SettingsDialog({ onClose, onCheckForUpdates, onSaved }: Props) {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [hotkeyError, setHotkeyError] = useState<string | null>(null);
   const [version, setVersion] = useState('');
@@ -17,10 +18,11 @@ export default function SettingsDialog({ onClose, onCheckForUpdates }: Props) {
     window.msm.getAppVersion().then(setVersion);
   }, []);
 
-  async function update(partial: Partial<AppSettings>) {
+  async function update(partial: Partial<AppSettings>, savedMessage: string) {
     const result = await window.msm.setSettings(partial);
     setSettings(result.settings);
     setHotkeyError(result.error);
+    onSaved(result.error ?? savedMessage);
   }
 
   return (
@@ -35,7 +37,7 @@ export default function SettingsDialog({ onClose, onCheckForUpdates }: Props) {
                 value={settings.paletteHotkey}
                 error={hotkeyError}
                 allowClear={false}
-                onChange={(next) => next && void update({ paletteHotkey: next })}
+                onChange={(next) => next && void update({ paletteHotkey: next }, `팔레트 단축키 변경됨: ${next}`)}
               />
             </div>
             {hotkeyError && <div className="manager-hint warn">{hotkeyError}</div>}
@@ -45,7 +47,9 @@ export default function SettingsDialog({ onClose, onCheckForUpdates }: Props) {
               <input
                 type="checkbox"
                 checked={settings.openAtLogin}
-                onChange={(e) => void update({ openAtLogin: e.target.checked })}
+                onChange={(e) =>
+                  void update({ openAtLogin: e.target.checked }, e.target.checked ? '로그인 시 자동 실행 켬' : '로그인 시 자동 실행 끔')
+                }
               />
             </label>
 
@@ -54,7 +58,9 @@ export default function SettingsDialog({ onClose, onCheckForUpdates }: Props) {
               <input
                 type="checkbox"
                 checked={settings.hideDockIcon}
-                onChange={(e) => void update({ hideDockIcon: e.target.checked })}
+                onChange={(e) =>
+                  void update({ hideDockIcon: e.target.checked }, e.target.checked ? 'Dock 숨김' : 'Dock 표시')
+                }
               />
             </label>
           </>
