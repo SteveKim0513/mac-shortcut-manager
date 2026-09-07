@@ -57,10 +57,11 @@ interface Props {
   value: string | null;
   error?: string | null;
   disabled?: boolean;
+  allowClear?: boolean;
   onChange: (next: string | null) => void;
 }
 
-export default function HotkeyRecorder({ value, error, disabled, onChange }: Props) {
+export default function HotkeyRecorder({ value, error, disabled, allowClear = true, onChange }: Props) {
   const [recording, setRecording] = useState(false);
 
   useEffect(() => {
@@ -92,7 +93,7 @@ export default function HotkeyRecorder({ value, error, disabled, onChange }: Pro
       >
         {recording ? '키를 누르세요… (Esc 취소)' : value || '단축키 설정 안 됨'}
       </button>
-      {value && !recording && (
+      {allowClear && value && !recording && (
         <button type="button" className="hotkey-recorder-clear" disabled={disabled} onClick={() => onChange(null)}>
           지우기
         </button>

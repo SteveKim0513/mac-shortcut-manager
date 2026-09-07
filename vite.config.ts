@@ -8,9 +8,11 @@ export default defineConfig({
     electron({
       main: {
         entry: 'electron/main.ts',
-        // chokidar (native fsevents optional dep on macOS) must stay a real
-        // node_modules require at runtime rather than get esbuild-bundled.
-        vite: { build: { rollupOptions: { external: ['chokidar'] } } },
+        // chokidar (native fsevents optional dep on macOS) and electron-log
+        // (internal requires that don't bundle well — same issue mind-map
+        // hit) must stay real node_modules requires rather than get
+        // esbuild-bundled.
+        vite: { build: { rollupOptions: { external: ['chokidar', 'electron-log', 'electron-log/main'] } } },
         onstart(args) {
           // VS Code sets ELECTRON_RUN_AS_NODE=1 which makes Electron act as
           // plain Node.js (no app.whenReady, no BrowserWindow). Unset it so

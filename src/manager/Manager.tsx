@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { RunResult, ShortcutMeta } from '../../shared/types';
+import type { UpdateStatus } from '../../electron/updater';
 import HotkeyRecorder from './HotkeyRecorder';
 import CodeEditor from './CodeEditor';
+import NewShortcutDialog from './NewShortcutDialog';
+import ConfirmDialog from './ConfirmDialog';
+import SettingsDialog from './SettingsDialog';
+import UpdateStatusPopup from './UpdateStatusPopup';
 import './Manager.css';
 
 const UNCATEGORIZED = '미분류';
@@ -13,6 +18,10 @@ export default function Manager() {
   const [savedContent, setSavedContent] = useState('');
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [running, setRunning] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
 
   useEffect(() => {
     window.msm.listShortcuts().then((list) => {
@@ -20,6 +29,15 @@ export default function Manager() {
       if (list.length > 0) setSelectedId((prev) => prev ?? list[0].id);
     });
     return window.msm.onShortcutsUpdated(setItems);
+  }, []);
+
+  useEffect(() => {
+    const offSettings = window.msm.onSettingsOpen(() => setSettingsOpen(true));
+    const offUpdate = window.msm.onUpdateStatus(setUpdateStatus);
+    return () => {
+      offSettings();
+      offUpdate();
+    };
   }, []);
 
   // Loads the selected file's content exactly once per selection change —
@@ -80,17 +98,16 @@ export default function Manager() {
     setRunning(false);
   }
 
-  async function handleDelete() {
-    if (!selectedId || !selected) return;
-    if (!confirm(`"${selected.name}"을(를) 삭제할까요? 이 작업은 되돌릴 수 없습니다.`)) return;
+  async function handleConfirmDelete() {
+    if (!selectedId) return;
     await window.msm.deleteShortcut(selectedId);
     setSelectedId(null);
+    setConfirmingDelete(false);
   }
 
-  async function handleCreate() {
-    const name = prompt('새 단축어 이름');
-    if (!name?.trim()) return;
-    const meta = await window.msm.createShortcut(name.trim());
+  async function handleCreateSubmit(name: string) {
+    const meta = await window.msm.createShortcut(name);
+    setCreating(false);
     setSelectedId(meta.id);
   }
 
@@ -109,9 +126,14 @@ export default function Manager() {
       <aside className="manager-sidebar">
         <div className="manager-sidebar-header">
           <h1>단축어</h1>
-          <button className="manager-new-btn" onClick={() => void handleCreate()}>
-            + 새로 만들기
-          </button>
+          <div className="manager-sidebar-actions">
+            <button className="manager-new-btn" onClick={() => setCreating(true)}>
+              + 새로 만들기
+            </button>
+            <button className="manager-icon-btn" title="설정" onClick={() => setSettingsOpen(true)}>
+              ⚙
+            </button>
+          </div>
         </div>
         <div className="manager-list">
           {items.length === 0 && (
@@ -150,7 +172,7 @@ export default function Manager() {
                 {selected.icon || '⚡'} {selected.name}
               </span>
               <button onClick={() => void window.msm.revealShortcut(selected.id)}>Finder에서 보기</button>
-              <button className="danger" onClick={() => void handleDelete()}>
+              <button className="danger" onClick={() => setConfirmingDelete(true)}>
                 삭제
               </button>
               <button onClick={() => void handleRun()} disabled={running}>
@@ -185,6 +207,26 @@ export default function Manager() {
           </>
         )}
       </main>
+
+      {creating && <NewShortcutDialog onCreate={(name) => void handleCreateSubmit(name)} onCancel={() => setCreating(false)} />}
+      {confirmingDelete && selected && (
+        <ConfirmDialog
+          message={`"${selected.name}"을(를) 삭제할까요? 이 작업은 되돌릴 수 없습니다.`}
+          onConfirm={() => void handleConfirmDelete()}
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
+      {settingsOpen && (
+        <SettingsDialog onClose={() => setSettingsOpen(false)} onCheckForUpdates={() => void window.msm.checkForUpdates()} />
+      )}
+      {updateStatus && (
+        <UpdateStatusPopup
+          status={updateStatus}
+          onClose={() => setUpdateStatus(null)}
+          onInstall={() => void window.msm.installUpdate()}
+          onRetry={() => void window.msm.checkForUpdates()}
+        />
+      )}
     </div>
   );
 }
