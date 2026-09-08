@@ -21,13 +21,15 @@ npm run dev          # Electron + Vite 개발 서버
 npm run typecheck    # tsc --noEmit
 npm run build        # typecheck + 렌더러/일렉트론 번들
 npm run dist          # 서명·공증된 .dmg/.zip 로컬 빌드 (release/, 퍼블리시 안 함)
-npm run release       # dist와 동일 + GitHub Releases에 실제 업로드
+npm run release       # dist와 동일 + GitHub Releases에 실제 업로드 (완료 후 자동으로 오래된 릴리즈 정리)
 node scripts/make-icon.mjs   # build/icon.icns 재생성 (디자인 바뀔 때만)
 ```
 
 - 완료 주장 전 최소 `npm run typecheck` (UI·electron 변경 시 `npm run build`까지) 실행.
 - UI/Electron 변경은 반드시 `npm run dev`로 실제 창을 띄워 확인한다 — 아래 "환경에서 겪은 것들"의 함정을 먼저 읽을 것.
 - 패키지 매니저는 npm만 쓴다.
+- `npm run dev`/`dist`/`release`는 각각 `predev`/`predist`/`prerelease` 훅으로 `kill:dev`(이 프로젝트의 `node_modules/electron/dist/Electron.app` 경로로 실행 중인 dev 프로세스를 찾아 종료)를 자동 실행한다 — dev 인스턴스를 안 끄고 세션이 끝나 설치된 패키지 앱과 충돌하는 사고를 막기 위함(아래 "환경에서 겪은 것들" 참고). 그래도 `npm run dev`로 UI 확인이 끝나면 습관적으로 그 프로세스를 종료할 것.
+- `npm run release`는 `postrelease` 훅으로 `scripts/cleanup-releases.sh`를 자동 실행해 GitHub Releases를 최신 5개만 남기고 그 이전 버전은 release+tag를 삭제한다(electron-updater의 차등 업데이트는 로컬 파일과 최신 릴리즈만 비교하므로 과거 릴리즈를 지워도 자동 업데이트에 영향 없음). 개수를 바꾸려면 그 스크립트의 `KEEP` 값을 수정. 릴리즈 없이 정리만 하려면 `bash scripts/cleanup-releases.sh` 단독 실행.
 
 ## Architecture
 
@@ -81,6 +83,8 @@ src/manager/, src/palette/  ─ 각 창의 React 컴포넌트
 - **electron-builder는 릴리즈를 기본적으로 Draft로 만든다.** `npm run release` 후 `gh release edit vX.Y.Z -R SteveKim0513/mac-shortcut-manager --draft=false`로 명시적으로 공개해야 실제로 보인다.
 
 - **`globalShortcut.register()`는 같은 프로세스 안에서 두 번째 호출이 첫 번째를 조용히 덮어쓴다.** 실패를 반환하지 않으므로 직접 짠 등록 로직으로는 스크립트 간 단축키 충돌을 절대 감지할 수 없다 — 반드시 `electron/hotkeys.ts`의 `HotkeyRegistrar`처럼 등록을 한 곳에 모아 클레임 결과를 직접 추적해야 한다. 실제 충돌 파일 두 개(`@msm-hotkey: Cmd+Shift+9`)로 재현해 `이미 "OO"에서 쓰고 있는 단축키예요` 메시지가 뜨는 것까지 확인함.
+
+- **`npm run dev`로 띄운 개발용 Electron과 설치된 패키지 앱은 같은 `userData`(및 single-instance 락)를 공유하는데, dev 세션을 안 끄고 방치하면 사용자가 패키지 앱을 실행/포커스해도 그 오래된 dev 창이 대신 뜬다.** 실제로 겪음: UI 확인용으로 띄워둔 `npm run dev`를 세션 종료 없이 방치한 상태에서 새 릴리즈를 배포했더니, 사용자가 "설치한 게 개발 버전으로 바뀐 것 같다"고 보고 — 원인은 새 패키지 앱이 아니라 락을 쥐고 있던 옛 dev 프로세스였다. `predev`/`predist`/`prerelease` 훅에 `kill:dev`(프로젝트 로컬 `node_modules/electron/dist/Electron.app` 경로 기준 `pkill`)를 넣어 자동으로 정리하지만, 그래도 UI 확인이 끝나면 바로 dev 프로세스를 직접 종료하는 습관을 들일 것 — 자동 훅은 다음 dev/dist/release 실행 시점에만 정리하므로 그 사이엔 여전히 사용자가 혼동할 수 있다.
 
 ## Personal Overrides
 

@@ -7,12 +7,17 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "predev": "npm run kill:dev --silent",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "predist": "npm run kill:dev --silent",
     "dist": "npm run build && electron-builder --publish never",
+    "prerelease": "npm run kill:dev --silent",
     "release": "npm run build && electron-builder --publish always",
-    "typecheck": "tsc --noEmit"
+    "postrelease": "bash scripts/cleanup-releases.sh",
+    "typecheck": "tsc --noEmit",
+    "kill:dev": "pkill -f \"$(pwd)/node_modules/electron/dist/Electron.app\" 2>/dev/null; true"
   },
   "dependencies": {
     "@codemirror/language": "^6.12.4",
