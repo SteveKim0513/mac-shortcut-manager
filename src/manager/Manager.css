@@ -17,10 +17,7 @@
   flex-direction: column;
   align-items: stretch;
   gap: 10px;
-  /* Left padding clears macOS's hiddenInset traffic-light buttons, which
-     float at a fixed position over window content, not in reserved space. */
-  padding: 14px 14px 10px 78px;
-  min-height: 38px;
+  padding: 14px 14px 10px;
   -webkit-app-region: drag;
 }
 
@@ -32,6 +29,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 24px;
+  /* Left padding clears macOS's hiddenInset traffic-light buttons, which
+     float at a fixed position over window content, not in reserved space.
+     Scoped to this row only so the action buttons below keep full width. */
+  padding-left: 64px;
 }
 
 .manager-sidebar-title-row h1 {

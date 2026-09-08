@@ -86,6 +86,8 @@ src/manager/, src/palette/  ─ 각 창의 React 컴포넌트
 
 - **`npm run dev`로 띄운 개발용 Electron과 설치된 패키지 앱은 같은 `userData`(및 single-instance 락)를 공유하는데, dev 세션을 안 끄고 방치하면 사용자가 패키지 앱을 실행/포커스해도 그 오래된 dev 창이 대신 뜬다.** 실제로 겪음: UI 확인용으로 띄워둔 `npm run dev`를 세션 종료 없이 방치한 상태에서 새 릴리즈를 배포했더니, 사용자가 "설치한 게 개발 버전으로 바뀐 것 같다"고 보고 — 원인은 새 패키지 앱이 아니라 락을 쥐고 있던 옛 dev 프로세스였다. `predev`/`predist`/`prerelease` 훅에 `kill:dev`(프로젝트 로컬 `node_modules/electron/dist/Electron.app` 경로 기준 `pkill`)를 넣어 자동으로 정리하지만, 그래도 UI 확인이 끝나면 바로 dev 프로세스를 직접 종료하는 습관을 들일 것 — 자동 훅은 다음 dev/dist/release 실행 시점에만 정리하므로 그 사이엔 여전히 사용자가 혼동할 수 있다.
 
+- **`osascript`로 패키지 앱을 quit시킨 뒤 같은 자동화 세션(`open -a`/바이너리 직접 실행)에서 다시 띄우면, 서명·공증은 멀쩡한데 프로세스가 1초 안에 조용히 종료되고 System Events/Launch Services에는 뜬 적도 없던 것처럼 보이는 경우가 있었다.** 코드 문제가 아니었다 — 크래시 로그도 없고, 직전까지 정상 실행 중이던 빌드였고, 사용자가 Dock/Spotlight에서 직접 실행하니 바로 정상적으로 떴다. 원인은 이 자동화 세션이 앱을 재실행하는 방식과 single-instance 체크가 얽히는 이 환경 특유의 문제로 추정(Dock 재시작으로도 안 고쳐짐, 근본 원인 미확정). **패키지 앱을 검증용으로 껐다가 다시 켜야 할 때는 자동화로 재실행을 반복 시도하지 말고, 한두 번 시도해서 안 되면 바로 사용자에게 직접 실행해달라고 요청할 것** — 시간 낭비하며 더 깊이 팔 필요 없다.
+
 ## Personal Overrides
 
 개인·장비별 설정은 `.claude/settings.local.json`에 작성한다(gitignore됨). 지금은 `npm run release` 실행을 위한 Bash 권한 규칙이 들어 있다.
