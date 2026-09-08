@@ -27,6 +27,11 @@
   color: var(--ink);
   font-size: 16px;
   outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.palette-input:focus {
+  border-bottom-color: var(--accent);
 }
 
 .palette-input::placeholder {

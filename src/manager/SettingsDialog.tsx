@@ -27,8 +27,14 @@ export default function SettingsDialog({ onClose, onCheckForUpdates, onSaved }: 
 
   return (
     <div className="dialog-overlay" onClick={onClose}>
-      <div className="dialog settings-dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>설정</h2>
+      <div
+        className="dialog settings-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="settings-title">설정</h2>
         {settings && (
           <>
             <div className="settings-row">

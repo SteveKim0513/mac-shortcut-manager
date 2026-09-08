@@ -16,10 +16,10 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: 10px;
   /* Left padding clears macOS's hiddenInset traffic-light buttons, which
      float at a fixed position over window content, not in reserved space. */
-  padding: 14px 14px 8px 78px;
+  padding: 14px 14px 10px 78px;
   min-height: 38px;
   -webkit-app-region: drag;
 }
@@ -28,7 +28,13 @@
   -webkit-app-region: no-drag;
 }
 
-.manager-sidebar-header h1 {
+.manager-sidebar-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.manager-sidebar-title-row h1 {
   font-size: 13px;
   font-weight: 600;
   margin: 0;
@@ -37,11 +43,38 @@
   letter-spacing: 0.04em;
 }
 
+/* Three equal-weight ways to create a shortcut — same shape and size so the
+   row reads as one coherent choice, not a primary button next to two
+   afterthought icons. */
 .manager-sidebar-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.manager-create-btn {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-2);
+  color: var(--ink-muted);
+  border-radius: var(--radius-sm);
+  height: 28px;
+  padding: 0 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.manager-create-btn-icon {
+  flex-shrink: 0;
+}
+
+.manager-create-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-hover);
 }
 
 .manager-icon-btn {
@@ -49,30 +82,17 @@
   background: var(--surface-2);
   color: var(--ink-muted);
   border-radius: var(--radius-sm);
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .manager-icon-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent-hover);
-}
-
-.manager-new-btn {
-  border: 1px solid var(--hairline);
-  background: var(--surface-2);
-  color: var(--ink);
-  border-radius: var(--radius-sm);
-  padding: 4px 10px;
-  font-size: 12px;
-}
-
-.manager-new-btn:hover {
   border-color: var(--accent);
   color: var(--accent-hover);
 }
@@ -164,6 +184,21 @@
   white-space: nowrap;
 }
 
+.manager-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Extra breathing room + a hairline before the primary pair, so 삭제
+   (destructive) doesn't sit shoulder-to-shoulder with 실행/저장 (the two
+   actions someone reaches for on every normal visit). */
+.manager-toolbar-group-primary {
+  padding-left: 12px;
+  margin-left: 4px;
+  border-left: 1px solid var(--hairline);
+}
+
 .manager-toolbar button {
   border: 1px solid var(--hairline);
   background: var(--surface-2);
@@ -217,16 +252,47 @@
   gap: 6px;
 }
 
+.manager-info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 16px 0;
+  padding: 10px 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+}
+
 .manager-meta-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 16px 2px;
 }
 
 .manager-meta-label {
+  width: 40px;
+  flex-shrink: 0;
   font-size: 12px;
   color: var(--ink-faint);
+}
+
+.manager-hint-details {
+  margin: 8px 16px 0;
+}
+
+.manager-hint-details summary {
+  font-size: 11px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  user-select: none;
+}
+
+.manager-hint-details summary:hover {
+  color: var(--ink-muted);
+}
+
+.manager-hint-details .manager-hint {
+  padding: 6px 0 0;
 }
 
 .hotkey-recorder {

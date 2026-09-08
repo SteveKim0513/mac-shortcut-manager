@@ -164,27 +164,29 @@ export default function Manager() {
     <div className="manager">
       <aside className="manager-sidebar">
         <div className="manager-sidebar-header">
-          <h1>단축어</h1>
-          <div className="manager-sidebar-actions">
-            <button className="manager-new-btn" onClick={() => setCreating(true)}>
-              + 새로 만들기
-            </button>
-            <button className="manager-icon-btn" title="AI로 만들기" onClick={() => setAiAssistOpen(true)}>
-              🤖
-            </button>
-            <button className="manager-icon-btn" title="프리셋에서 만들기" onClick={() => setPresetsOpen(true)}>
-              📦
-            </button>
-            <button className="manager-icon-btn" title="설정" onClick={() => setSettingsOpen(true)}>
+          <div className="manager-sidebar-title-row">
+            <h1>단축어</h1>
+            <button className="manager-icon-btn" title="설정" aria-label="설정" onClick={() => setSettingsOpen(true)}>
               ⚙
+            </button>
+          </div>
+          <div className="manager-sidebar-actions">
+            <button className="manager-create-btn" onClick={() => setCreating(true)}>
+              <span className="manager-create-btn-icon">+</span> 직접
+            </button>
+            <button className="manager-create-btn" onClick={() => setAiAssistOpen(true)}>
+              <span className="manager-create-btn-icon">🤖</span> AI
+            </button>
+            <button className="manager-create-btn" onClick={() => setPresetsOpen(true)}>
+              <span className="manager-create-btn-icon">📦</span> 프리셋
             </button>
           </div>
         </div>
         <div className="manager-list">
           {items.length === 0 && (
             <div className="manager-empty">
-              아직 단축어가 없습니다. "+ 새로 만들기"를 누르거나 ~/Documents/ShortcutScripts에
-              .sh 파일을 추가하세요.
+              아직 단축어가 없어요. 위에서 직접 만들거나, ~/Documents/ShortcutScripts에 .sh
+              파일을 추가해보세요.
             </div>
           )}
           {groups.map(([category, list]) => (
@@ -216,46 +218,56 @@ export default function Manager() {
               <span className="manager-toolbar-title">
                 {selected.icon || '⚡'} {selected.name}
               </span>
-              <button onClick={() => void window.msm.revealShortcut(selected.id)}>Finder에서 보기</button>
-              <button className="danger" onClick={() => setConfirmingDelete(true)}>
-                삭제
-              </button>
-              <button onClick={() => void handleRun()} disabled={running}>
-                {running ? '실행 중…' : '실행'}
-              </button>
-              <button className="primary" onClick={() => void handleSave()} disabled={!dirty}>
-                저장 {dirty ? '●' : ''}
-              </button>
-            </div>
-            <div className="manager-meta-row">
-              <span className="manager-meta-label">단축키</span>
-              <HotkeyRecorder
-                value={selected.hotkey}
-                error={selected.hotkeyError}
-                disabled={dirty}
-                onChange={(next) => void handleSetHotkey(next)}
-              />
-              {selected.hotkeyError && <span className="manager-hint warn">{selected.hotkeyError}</span>}
-            </div>
-            {selected.triggers.length > 0 && (
-              <div className="manager-meta-row">
-                <span className="manager-meta-label">트리거</span>
-                <div className="manager-trigger-list">
-                  {selected.triggers.map((t, i) => (
-                    <span key={i} className="kbd">
-                      {t}
-                    </span>
-                  ))}
-                </div>
+              <div className="manager-toolbar-group">
+                <button onClick={() => void window.msm.revealShortcut(selected.id)}>Finder에서 보기</button>
+                <button className="danger" onClick={() => setConfirmingDelete(true)}>
+                  삭제
+                </button>
               </div>
-            )}
-            <div className="manager-hint">
-              헤더 주석(# @msm-name / @msm-icon / @msm-description / @msm-category)으로 나머지 정보를
-              설정합니다. 단축키는 위 버튼으로 등록하고, 자동 실행은 <code># @msm-trigger: schedule 09:00</code>
-              처럼 스크립트에 직접 적어주세요 (schedule HH:MM / login / wake / folder ~/경로). 스크립트 안에서
-              사용자 입력이 필요하면 <code>msm-ask</code>/<code>msm-choose</code>/<code>msm-confirm</code>을
-              바로 호출할 수 있습니다.
+              <div className="manager-toolbar-group manager-toolbar-group-primary">
+                <button onClick={() => void handleRun()} disabled={running}>
+                  {running ? '실행 중…' : '실행'}
+                </button>
+                <button className="primary" onClick={() => void handleSave()} disabled={!dirty}>
+                  저장 {dirty ? '●' : ''}
+                </button>
+              </div>
             </div>
+            <div className="manager-info-panel">
+              <div className="manager-meta-row">
+                <span className="manager-meta-label">단축키</span>
+                <HotkeyRecorder
+                  value={selected.hotkey}
+                  error={selected.hotkeyError}
+                  disabled={dirty}
+                  onChange={(next) => void handleSetHotkey(next)}
+                />
+                {selected.hotkeyError && <span className="manager-hint warn">{selected.hotkeyError}</span>}
+              </div>
+              {selected.triggers.length > 0 && (
+                <div className="manager-meta-row">
+                  <span className="manager-meta-label">트리거</span>
+                  <div className="manager-trigger-list">
+                    {selected.triggers.map((t, i) => (
+                      <span key={i} className="kbd">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <details className="manager-hint-details">
+              <summary>헤더 주석·트리거·입력 도우미 문법 보기</summary>
+              <p className="manager-hint">
+                헤더 주석(# @msm-name / @msm-icon / @msm-description / @msm-category)으로 나머지 정보를
+                설정합니다. 단축키는 위 버튼으로 등록하고, 자동 실행은{' '}
+                <code># @msm-trigger: schedule 09:00</code> 처럼 스크립트에 직접 적어주세요 (schedule HH:MM /
+                login / wake / folder ~/경로). 스크립트 안에서 사용자 입력이 필요하면{' '}
+                <code>msm-ask</code>/<code>msm-choose</code>/<code>msm-confirm</code>을 바로 호출할 수
+                있습니다.
+              </p>
+            </details>
             <CodeEditor value={content} onChange={setContent} onSave={() => void handleSave()} />
             {runResult && (
               <div className={`manager-output ${runResult.success ? 'success' : 'failure'}`}>

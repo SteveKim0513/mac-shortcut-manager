@@ -31,6 +31,12 @@ macOS 단축어 앱과 비교해 이 서비스가 강해질 수 있는 지점을
 
 구현 난이도 순(쉬운 것부터): `schedule`(자체 타이머) → `login`/`wake`(Electron `powerMonitor`) → `folder`(이미 있는 chokidar 인프라 재사용) → `app-launch`/`app-quit`(`NSWorkspace` 알림, 네이티브 연동 필요) → `wifi-connect`(폴링 기반, 배터리 비용 고려) → `battery-below`/`power-connected`(`powerMonitor` + `pmset` 폴링).
 
+## 채택: 단축키 충돌 안내 ✅ (구현 완료)
+
+단축키는 스크립트 개수만큼 늘어나는데, Electron의 `globalShortcut.register()`는 같은 앱 안에서 두 번째 등록이 첫 번째를 조용히 덮어써버린다 — 실패도, 에러도 없다. 그래서 스크립트 A와 B에 같은 단축키를 넣어도 지금까지는 아무 알림 없이 하나가 무력화됐다. [PRINCIPLES.md](PRINCIPLES.md) 6번("조용히 실패하지 않는다")을 정면으로 어기는 사각지대였다.
+
+`electron/hotkeys.ts`에 `HotkeyRegistrar`를 두어 모든 단축키 등록(스크립트 + 팔레트)이 이 한 곳을 거치게 했다. 이름 순으로 정렬해 먼저 오는 쪽이 항상 이기도록 결정적으로 처리하고, 충돌하면 진 쪽에 "이미 "OO"에서 쓰고 있는 단축키예요"처럼 상대 이름을 콕 집어 알려준다(기존 `HotkeyRecorder` 에러 표시 UI 재사용, 새 UI 없음). OS 레벨 충돌(다른 앱이 먼저 선점 — 예: mind-map의 `Alt+Space` 퀵캡처, 환경 노트 참고)은 어떤 앱이 이겼는지 알 방법이 없어 일반 문구로 안내한다.
+
 ## 채택: 스크립트용 입력 도우미 ✅ (구현 완료)
 
 Shortcuts의 "입력받기" 액션에 대응. 앱에 새 UI를 만드는 대신, 스크립트가 호출할 수 있는 작은 CLI 3개를 앱과 함께 제공한다(AppleScript `display dialog`/`choose from list` 백엔드, 또는 우리 앱이 직접 처리):

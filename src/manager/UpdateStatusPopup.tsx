@@ -85,7 +85,7 @@ export default function UpdateStatusPopup({ status, onClose, onInstall, onRetry 
 
   return (
     <div className="dialog-overlay" onMouseDown={() => !busy && onClose()}>
-      <div className="dialog" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="dialog" role="alertdialog" aria-modal="true" aria-live="polite" onMouseDown={(e) => e.stopPropagation()}>
         {status.phase === 'downloading' && (
           <div className="update-progress">
             <div className="update-progress-fill" style={{ width: `${status.percent}%` }} />

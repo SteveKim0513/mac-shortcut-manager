@@ -80,6 +80,8 @@ src/manager/, src/palette/  ─ 각 창의 React 컴포넌트
   - 저장소 생성/삭제처럼 `--user`가 없는 `gh repo`/`gh auth refresh` 같은 명령만 어쩔 수 없이 `gh auth switch`가 필요 — 그 경우에도 실행 직전에 `gh api user --jq '.login'`으로 다시 한번 확인할 것.
 - **electron-builder는 릴리즈를 기본적으로 Draft로 만든다.** `npm run release` 후 `gh release edit vX.Y.Z -R SteveKim0513/mac-shortcut-manager --draft=false`로 명시적으로 공개해야 실제로 보인다.
 
+- **`globalShortcut.register()`는 같은 프로세스 안에서 두 번째 호출이 첫 번째를 조용히 덮어쓴다.** 실패를 반환하지 않으므로 직접 짠 등록 로직으로는 스크립트 간 단축키 충돌을 절대 감지할 수 없다 — 반드시 `electron/hotkeys.ts`의 `HotkeyRegistrar`처럼 등록을 한 곳에 모아 클레임 결과를 직접 추적해야 한다. 실제 충돌 파일 두 개(`@msm-hotkey: Cmd+Shift+9`)로 재현해 `이미 "OO"에서 쓰고 있는 단축키예요` 메시지가 뜨는 것까지 확인함.
+
 ## Personal Overrides
 
 개인·장비별 설정은 `.claude/settings.local.json`에 작성한다(gitignore됨). 지금은 `npm run release` 실행을 위한 Bash 권한 규칙이 들어 있다.

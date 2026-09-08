@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import chokidar, { type FSWatcher } from 'chokidar';
-import { globalShortcut } from 'electron';
 import { parseScript } from './parser';
 import { runScript } from './runner';
 import { scriptsDir } from './paths';
 import { notifyRunResult } from './notify';
+import { hotkeyRegistrar } from './hotkeys';
 import type { ShortcutMeta } from '../shared/types';
 
 const EXAMPLE_SCRIPT = `#!/bin/zsh
@@ -33,7 +33,6 @@ type Listener = (list: ShortcutMeta[]) => void;
 // all reconcile through the exact same path.
 class ShortcutRegistry {
   private items = new Map<string, ShortcutMeta>();
-  private registeredAccelerators = new Map<string, string>(); // filePath -> accelerator
   private listeners = new Set<Listener>();
   private watcher: FSWatcher | null = null;
 
@@ -51,8 +50,7 @@ class ShortcutRegistry {
 
   dispose() {
     void this.watcher?.close();
-    for (const accel of this.registeredAccelerators.values()) globalShortcut.unregister(accel);
-    this.registeredAccelerators.clear();
+    for (const filePath of this.items.keys()) hotkeyRegistrar.release(filePath);
   }
 
   list(): ShortcutMeta[] {
@@ -77,28 +75,28 @@ class ShortcutRegistry {
   }
 
   private remove(filePath: string) {
+    hotkeyRegistrar.release(filePath);
     this.items.delete(filePath);
     this.reconcileHotkeys();
     this.emit();
   }
 
   private reconcileHotkeys() {
-    for (const [filePath, accel] of [...this.registeredAccelerators]) {
-      const current = this.items.get(filePath);
-      if (!current || current.hotkey !== accel) {
-        globalShortcut.unregister(accel);
-        this.registeredAccelerators.delete(filePath);
-      }
-    }
-    for (const meta of this.items.values()) {
-      if (!meta.hotkey) continue;
-      if (this.registeredAccelerators.get(meta.filePath) === meta.hotkey) continue;
-      const ok = globalShortcut.register(meta.hotkey, () => {
-        void runScript(meta.filePath).then((result) => notifyRunResult(meta, result));
-      });
-      if (ok) {
-        this.registeredAccelerators.set(meta.filePath, meta.hotkey);
+    // Sorted (not insertion order) so which script "wins" a duplicate
+    // hotkey is at least predictable — the alphabetically-first name.
+    for (const meta of this.list()) {
+      if (!meta.hotkey) {
+        hotkeyRegistrar.release(meta.filePath);
         meta.hotkeyError = null;
+        continue;
+      }
+      const result = hotkeyRegistrar.claim(meta.hotkey, meta.filePath, meta.name, () => {
+        void runScript(meta.filePath).then((r) => notifyRunResult(meta, r));
+      });
+      if (result.ok) {
+        meta.hotkeyError = null;
+      } else if (result.conflictLabel) {
+        meta.hotkeyError = `이미 "${result.conflictLabel}"에서 쓰고 있는 단축키예요`;
       } else {
         meta.hotkeyError = '이 단축키는 이미 다른 앱이 쓰고 있는 것 같아요. 다른 조합으로 시도해보세요';
       }

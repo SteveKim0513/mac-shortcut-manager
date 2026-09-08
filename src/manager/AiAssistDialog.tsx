@@ -61,12 +61,21 @@ export default function AiAssistDialog({ onCreate, onCancel }: Props) {
 
   return (
     <div className="dialog-overlay" onClick={onCancel}>
-      <div className="dialog ai-dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>AI로 단축어 만들기</h2>
+      <div
+        className="dialog ai-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ai-assist-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="ai-assist-title">AI로 단축어 만들기</h2>
 
         <div className="ai-step">
-          <span className="ai-step-label">1. 원하는 동작을 설명하세요</span>
+          <label className="ai-step-label" htmlFor="ai-description">
+            1. 원하는 동작을 설명하세요
+          </label>
           <textarea
+            id="ai-description"
             className="dialog-textarea"
             placeholder="예: 다운로드 폴더에 새 파일 생기면 스크린샷 폴더로 정리해줘"
             value={description}
@@ -82,8 +91,11 @@ export default function AiAssistDialog({ onCreate, onCancel }: Props) {
         </div>
 
         <div className="ai-step">
-          <span className="ai-step-label">2. AI가 준 코드를 붙여넣으세요</span>
+          <label className="ai-step-label" htmlFor="ai-pasted-code">
+            2. AI가 준 코드를 붙여넣으세요
+          </label>
           <textarea
+            id="ai-pasted-code"
             className="dialog-textarea ai-code-area"
             placeholder="#!/bin/zsh ..."
             spellCheck={false}

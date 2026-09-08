@@ -28,10 +28,17 @@ export default function PresetBrowserDialog({ onCreate, onCancel }: Props) {
 
   return (
     <div className="dialog-overlay" onClick={onCancel}>
-      <div className="dialog preset-dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>프리셋에서 만들기</h2>
+      <div
+        className="dialog preset-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preset-dialog-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="preset-dialog-title">프리셋에서 만들기</h2>
         <input
           className="dialog-input preset-search"
+          aria-label="프리셋 검색"
           placeholder="검색… (예: 다운로드, git, wifi)"
           value={query}
           autoFocus

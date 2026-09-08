@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, Menu, shell, Tray } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, shell, Tray } from 'electron';
 import type { MenuItemConstructorOptions } from 'electron';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -13,6 +13,7 @@ import { initAutoUpdate, checkForUpdatesManually, installUpdate } from './update
 import { triggerEngine } from './triggers';
 import { installHelpers } from './helpers';
 import { notifyRunResult } from './notify';
+import { hotkeyRegistrar, type ClaimResult } from './hotkeys';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -119,19 +120,20 @@ function openManagerThen(fn: () => void) {
   else fn();
 }
 
-// Swaps the registered global accelerator for the palette. Re-registers the
+// Swaps the registered global accelerator for the palette. Re-claims the
 // previous one on failure so a bad input never leaves the app with no way to
-// open the palette at all.
-function applyPaletteHotkey(next: string): boolean {
-  globalShortcut.unregister(settings.paletteHotkey);
-  const ok = globalShortcut.register(next, togglePalette);
-  if (ok) {
+// open the palette at all. Goes through hotkeyRegistrar (not globalShortcut
+// directly) so a collision with one of the user's own script hotkeys is
+// detected and named, not silently stolen.
+function applyPaletteHotkey(next: string): ClaimResult {
+  const result = hotkeyRegistrar.claim(next, 'palette', '팔레트 열기', togglePalette);
+  if (result.ok) {
     settings = { ...settings, paletteHotkey: next };
     saveSettings(settings);
   } else {
-    globalShortcut.register(settings.paletteHotkey, togglePalette);
+    hotkeyRegistrar.claim(settings.paletteHotkey, 'palette', '팔레트 열기', togglePalette);
   }
-  return ok;
+  return result;
 }
 
 function applyLoginAndDockSettings() {
@@ -212,8 +214,8 @@ app.whenReady().then(() => {
   createTray();
   initAutoUpdate(() => managerWindow);
 
-  const ok = globalShortcut.register(settings.paletteHotkey, togglePalette);
-  if (!ok) console.warn(`[palette] ${settings.paletteHotkey} already in use by another app`);
+  const initial = hotkeyRegistrar.claim(settings.paletteHotkey, 'palette', '팔레트 열기', togglePalette);
+  if (!initial.ok) console.warn(`[palette] ${settings.paletteHotkey} already in use by another app`);
 
   app.on('activate', () => createManagerWindow());
   // Someone launched a second instance — surface the existing one instead.
@@ -225,7 +227,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {});
 
 app.on('will-quit', () => {
-  globalShortcut.unregisterAll();
+  hotkeyRegistrar.releaseAll();
   registry.dispose();
   triggerEngine.dispose();
 });
@@ -289,8 +291,13 @@ ipcMain.handle('settings:get', () => settings);
 
 ipcMain.handle('settings:set', (_e, partial: Partial<AppSettings>) => {
   if (typeof partial.paletteHotkey === 'string' && partial.paletteHotkey !== settings.paletteHotkey) {
-    const ok = applyPaletteHotkey(partial.paletteHotkey);
-    if (!ok) return { settings, error: '이 단축키는 이미 다른 앱이 쓰고 있는 것 같아요. 다른 조합으로 시도해보세요' };
+    const result = applyPaletteHotkey(partial.paletteHotkey);
+    if (!result.ok) {
+      const error = result.conflictLabel
+        ? `이미 "${result.conflictLabel}"에서 쓰고 있는 단축키예요`
+        : '이 단축키는 이미 다른 앱이 쓰고 있는 것 같아요. 다른 조합으로 시도해보세요';
+      return { settings, error };
+    }
   }
   if (typeof partial.openAtLogin === 'boolean') settings = { ...settings, openAtLogin: partial.openAtLogin };
   if (typeof partial.hideDockIcon === 'boolean') settings = { ...settings, hideDockIcon: partial.hideDockIcon };

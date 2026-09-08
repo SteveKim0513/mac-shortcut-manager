@@ -23,11 +23,12 @@ export default function NewShortcutDialog({ onCreate, onCancel }: Props) {
 
   return (
     <div className="dialog-overlay" onClick={onCancel}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <h2>새 단축어 이름</h2>
+      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="new-shortcut-title" onClick={(e) => e.stopPropagation()}>
+        <h2 id="new-shortcut-title">새 단축어 이름</h2>
         <input
           ref={inputRef}
           className="dialog-input"
+          aria-label="새 단축어 이름"
           value={name}
           placeholder="예: 다크모드 토글"
           onChange={(e) => setName(e.target.value)}
