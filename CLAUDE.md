@@ -88,6 +88,8 @@ src/manager/, src/palette/  ─ 각 창의 React 컴포넌트
 
 - **`osascript`로 패키지 앱을 quit시킨 뒤 같은 자동화 세션(`open -a`/바이너리 직접 실행)에서 다시 띄우면, 서명·공증은 멀쩡한데 프로세스가 1초 안에 조용히 종료되고 System Events/Launch Services에는 뜬 적도 없던 것처럼 보이는 경우가 있었다.** 코드 문제가 아니었다 — 크래시 로그도 없고, 직전까지 정상 실행 중이던 빌드였고, 사용자가 Dock/Spotlight에서 직접 실행하니 바로 정상적으로 떴다. 원인은 이 자동화 세션이 앱을 재실행하는 방식과 single-instance 체크가 얽히는 이 환경 특유의 문제로 추정(Dock 재시작으로도 안 고쳐짐, 근본 원인 미확정). **패키지 앱을 검증용으로 껐다가 다시 켜야 할 때는 자동화로 재실행을 반복 시도하지 말고, 한두 번 시도해서 안 되면 바로 사용자에게 직접 실행해달라고 요청할 것** — 시간 낭비하며 더 깊이 팔 필요 없다.
 
+- **`osascript`의 `keystroke`로 만든 합성 키 입력은 이 환경에서 Electron `globalShortcut`(macOS Carbon 전역 단축키 훅)까지 도달하지 않는다.** 렌더러의 일반 `keydown` DOM 이벤트에는 정상적으로 들어오지만(그래서 HotkeyRecorder의 캡처·충돌 메시지 UI는 이 방식으로 검증 가능), 실제로 전역 단축키가 스크립트를 실행하는지는 이 방법으로 확인할 수 없다 — pristine 상태(아무 단축키 조작도 안 한 갓 띄운 dev 인스턴스)에서도 이미 등록된 `Alt+2`를 `keystroke`로 눌러도 `caffeinate` 프로세스가 새로 뜨지 않는 것으로 확인함. 전역 단축키의 실제 실행 여부는 사용자가 실제 키보드로 눌러서 확인해야 한다 — 이 방법으로 "안 눌린다"는 결과가 나와도 그게 코드 버그라는 증거가 아니다.
+
 ## Personal Overrides
 
 개인·장비별 설정은 `.claude/settings.local.json`에 작성한다(gitignore됨). 지금은 `npm run release` 실행을 위한 Bash 권한 규칙이 들어 있다.

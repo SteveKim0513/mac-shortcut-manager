@@ -66,6 +66,13 @@ export default function HotkeyRecorder({ value, error, disabled, allowClear = tr
 
   useEffect(() => {
     if (!recording) return;
+    // Electron's globalShortcut fires system-wide regardless of what's
+    // focused in-app — without this, pressing a combo an existing script
+    // already owns would both get captured here *and* silently run that
+    // script in the background. Suspend every registered hotkey for the
+    // duration of recording so a conflicting combo is just input, not
+    // an action; conflict detection still happens afterward via onChange.
+    window.msm.suspendHotkeys();
     function onKeyDown(e: KeyboardEvent) {
       e.preventDefault();
       e.stopPropagation();
@@ -79,7 +86,10 @@ export default function HotkeyRecorder({ value, error, disabled, allowClear = tr
       setRecording(false);
     }
     window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.msm.resumeHotkeys();
+    };
   }, [recording, onChange]);
 
   return (

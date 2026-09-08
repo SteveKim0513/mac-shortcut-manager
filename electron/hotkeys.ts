@@ -4,6 +4,7 @@ interface Claim {
   accelerator: string;
   ownerId: string;
   ownerLabel: string;
+  callback: () => void;
 }
 
 export interface ClaimResult {
@@ -41,7 +42,7 @@ class HotkeyRegistrar {
 
     const registered = globalShortcut.register(accelerator, callback);
     if (!registered) return { ok: false };
-    this.claims.set(accelerator, { accelerator, ownerId, ownerLabel });
+    this.claims.set(accelerator, { accelerator, ownerId, ownerLabel, callback });
     return { ok: true };
   }
 
@@ -59,6 +60,19 @@ class HotkeyRegistrar {
   releaseAll(): void {
     for (const accel of this.claims.keys()) globalShortcut.unregister(accel);
     this.claims.clear();
+  }
+
+  /** Unregisters every held accelerator at the OS level *without* forgetting
+   * who owns what — used while the user is recording a new hotkey, so that
+   * pressing a combo an existing script already owns just gets captured as
+   * input instead of also firing that script in the background. */
+  suspendAll(): void {
+    for (const accel of this.claims.keys()) globalShortcut.unregister(accel);
+  }
+
+  /** Re-registers every claim that `suspendAll` unregistered. */
+  resumeAll(): void {
+    for (const claim of this.claims.values()) globalShortcut.register(claim.accelerator, claim.callback);
   }
 }
 

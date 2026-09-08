@@ -48,6 +48,8 @@ const api = {
     return () => ipcRenderer.off('settings:open', listener);
   },
   openExternal: (url: string): void => ipcRenderer.send('shell:openExternal', url),
+  suspendHotkeys: (): void => ipcRenderer.send('hotkeys:suspend'),
+  resumeHotkeys: (): void => ipcRenderer.send('hotkeys:resume'),
 };
 
 export type MsmApi = typeof api;

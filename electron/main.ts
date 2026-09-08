@@ -306,6 +306,11 @@ ipcMain.handle('settings:set', (_e, partial: Partial<AppSettings>) => {
   return { settings, error: null };
 });
 
+// While the user is recording a new hotkey in the UI, pressing a combo that
+// an existing script already owns must not also run that script.
+ipcMain.on('hotkeys:suspend', () => hotkeyRegistrar.suspendAll());
+ipcMain.on('hotkeys:resume', () => hotkeyRegistrar.resumeAll());
+
 ipcMain.handle('app:getVersion', () => app.getVersion());
 
 ipcMain.handle('update:check', () => checkForUpdatesManually());
