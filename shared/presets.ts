@@ -8,23 +8,23 @@ export interface Preset {
   script: string;
 }
 
-// Curated for everyday students and casual Mac users — not developers.
+// Curated for everyday, casual Mac users — not developers.
 // Every script here is hand-verified: run for real where it's safe and
 // harmless (read-only queries, clipboard transforms, timers), syntax-checked
 // with `zsh -n` where it isn't (things that move/delete real files or toggle
 // system state). See PRINCIPLES.md — no new execution model, just scripts.
 export const PRESETS: Preset[] = [
-  // ── 학업 ────────────────────────────────────────────────────────────
+  // ── 생산성 ──────────────────────────────────────────────────────────
   {
     id: 'dated-note',
     name: '오늘 날짜로 메모 만들기',
     icon: '🗒️',
-    category: '학업',
+    category: '생산성',
     summary: 'Notes 앱에 오늘 날짜를 제목으로 새 메모를 만들어요',
     script: `#!/bin/zsh
 # @msm-name: 오늘 날짜로 메모 만들기
 # @msm-icon: 🗒️
-# @msm-category: 학업
+# @msm-category: 생산성
 # @msm-description: Notes 앱에 오늘 날짜를 제목으로 새 메모를 만듭니다 (처음 실행하면 macOS가 Notes 접근을 허용할지 물어봐요)
 today=$(date "+%Y-%m-%d")
 osascript - "$today" <<'APPLESCRIPT'
@@ -40,12 +40,12 @@ echo "오늘 날짜 메모를 만들었어요: $today"
     id: 'focus-timer-25',
     name: '25분 집중 타이머',
     icon: '🍅',
-    category: '학업',
+    category: '생산성',
     summary: '뽀모도로 스타일로 25분 뒤에 알려줘요',
     script: `#!/bin/zsh
 # @msm-name: 25분 집중 타이머
 # @msm-icon: 🍅
-# @msm-category: 학업
+# @msm-category: 생산성
 # @msm-description: 25분 뒤 알림을 보내는 뽀모도로 타이머예요 (백그라운드로 돌아가고 이 스크립트는 바로 끝나요)
 ( sleep 1500; osascript -e 'display notification "25분 집중 끝! 잠깐 쉬어요" with title "뽀모도로 타이머"' ) > /dev/null 2>&1 &
 disown
@@ -56,12 +56,12 @@ echo "25분 집중 타이머를 시작했어요"
     id: 'break-timer-5',
     name: '5분 휴식 타이머',
     icon: '⏰',
-    category: '학업',
+    category: '생산성',
     summary: '5분 뒤에 다시 시작하라고 알려줘요',
     script: `#!/bin/zsh
 # @msm-name: 5분 휴식 타이머
 # @msm-icon: ⏰
-# @msm-category: 학업
+# @msm-category: 생산성
 ( sleep 300; osascript -e 'display notification "5분 휴식 끝! 다시 시작해볼까요" with title "휴식 타이머"' ) > /dev/null 2>&1 &
 disown
 echo "5분 휴식 타이머를 시작했어요"
@@ -71,12 +71,12 @@ echo "5분 휴식 타이머를 시작했어요"
     id: 'todo-count',
     name: '할 일 몇 개 남았는지 확인',
     icon: '✅',
-    category: '학업',
+    category: '생산성',
     summary: '미리알림에 안 끝낸 할 일이 몇 개인지 알려줘요',
     script: `#!/bin/zsh
 # @msm-name: 할 일 몇 개 남았는지 확인
 # @msm-icon: ✅
-# @msm-category: 학업
+# @msm-category: 생산성
 count=$(osascript -e 'tell application "Reminders" to count of (every reminder whose completed is false)')
 echo "아직 안 끝낸 할 일이 \${count}개 있어요"
 `,
@@ -85,12 +85,12 @@ echo "아직 안 끝낸 할 일이 \${count}개 있어요"
     id: 'quick-reminder',
     name: '미리알림 빠르게 추가',
     icon: '📝',
-    category: '학업',
+    category: '생산성',
     summary: '입력한 내용을 미리알림 앱에 바로 추가해요',
     script: `#!/bin/zsh
 # @msm-name: 미리알림 빠르게 추가
 # @msm-icon: 📝
-# @msm-category: 학업
+# @msm-category: 생산성
 title=$(msm-ask "미리알림 내용")
 if [ -z "$title" ]; then
   echo "취소했어요"
@@ -106,20 +106,20 @@ echo "미리알림에 추가했어요: $title"
 `,
   },
   {
-    id: 'study-apps',
-    name: '공부용 앱 한번에 열기',
-    icon: '📚',
-    category: '학업',
-    summary: '자주 쓰는 앱을 한 번에 열어요 (앱 이름은 원하는 대로 수정)',
+    id: 'daily-apps',
+    name: '자주 쓰는 앱 한번에 열기',
+    icon: '📌',
+    category: '생산성',
+    summary: '하루를 시작할 때 쓰는 앱을 한 번에 열어요 (앱 이름은 원하는 대로 수정)',
     script: `#!/bin/zsh
-# @msm-name: 공부용 앱 한번에 열기
-# @msm-icon: 📚
-# @msm-category: 학업
+# @msm-name: 자주 쓰는 앱 한번에 열기
+# @msm-icon: 📌
+# @msm-category: 생산성
 # @msm-description: 자주 쓰는 앱을 한 번에 엽니다 — 앱 이름을 원하는 대로 바꿔서 쓰세요
 open -a "Safari" 2>/dev/null
+open -a "Mail" 2>/dev/null
 open -a "Notes" 2>/dev/null
-open -a "Pages" 2>/dev/null
-echo "공부용 앱을 열었어요"
+echo "자주 쓰는 앱을 열었어요"
 `,
   },
 
