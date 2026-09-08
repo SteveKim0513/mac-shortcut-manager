@@ -91,7 +91,7 @@ export default function HotkeyRecorder({ value, error, disabled, allowClear = tr
         onClick={() => setRecording(true)}
         title={disabled ? '저장하지 않은 변경사항을 먼저 저장하세요' : (error ?? undefined)}
       >
-        {recording ? '키를 누르세요… (Esc 취소)' : value || '단축키 설정 안 됨'}
+        {recording ? '키를 누르세요… (Esc 취소)' : value || '단축키 없음'}
       </button>
       {allowClear && value && !recording && (
         <button type="button" className="hotkey-recorder-clear" disabled={disabled} onClick={() => onChange(null)}>

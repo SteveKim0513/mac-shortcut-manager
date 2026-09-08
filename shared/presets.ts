@@ -25,6 +25,7 @@ export const PRESETS: Preset[] = [
 # @msm-category: 시스템
 # @msm-description: macOS 시스템 다크모드를 켜고 끕니다
 osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to not dark mode'
+echo "다크모드를 바꿨어요"
 `,
   },
   {
@@ -39,6 +40,7 @@ osascript -e 'tell application "System Events" to tell appearance preferences to
 # @msm-category: 시스템
 # @msm-description: 즉시 화면을 잠급니다
 pmset displaysleepnow
+echo "화면을 잠갔어요"
 `,
   },
   {
@@ -53,6 +55,7 @@ pmset displaysleepnow
 # @msm-category: 시스템
 # @msm-description: 지금 바로 화면보호기를 시작합니다
 osascript -e 'tell application "System Events" to start current screen saver'
+echo "화면보호기를 시작했어요"
 `,
   },
   {
@@ -69,10 +72,10 @@ osascript -e 'tell application "System Events" to start current screen saver'
 current=$(defaults read com.apple.WindowManager GloballyEnabled 2>/dev/null)
 if [ "$current" = "1" ]; then
   defaults write com.apple.WindowManager GloballyEnabled -bool false
-  echo "Stage Manager 끔"
+  echo "Stage Manager를 껐어요"
 else
   defaults write com.apple.WindowManager GloballyEnabled -bool true
-  echo "Stage Manager 켬"
+  echo "Stage Manager를 켰어요"
 fi
 killall Dock
 `,
@@ -91,7 +94,7 @@ killall Dock
 defaults write com.apple.dock autohide-delay -float 0
 defaults write com.apple.dock autohide-time-modifier -float 0.15
 killall Dock
-echo "Dock 즉시 표시로 변경"
+echo "Dock이 바로 나타나게 바꿨어요"
 `,
   },
   {
@@ -107,7 +110,7 @@ echo "Dock 즉시 표시로 변경"
 defaults delete com.apple.dock autohide-delay 2>/dev/null
 defaults delete com.apple.dock autohide-time-modifier 2>/dev/null
 killall Dock
-echo "Dock 기본값으로 복원"
+echo "Dock 설정을 기본값으로 되돌렸어요"
 `,
   },
   {
@@ -124,10 +127,10 @@ echo "Dock 기본값으로 복원"
 state=$(networksetup -getairportpower en0 | awk '{print $NF}')
 if [ "$state" = "On" ]; then
   networksetup -setairportpower en0 off
-  echo "Wi-Fi 끔"
+  echo "Wi-Fi를 껐어요"
 else
   networksetup -setairportpower en0 on
-  echo "Wi-Fi 켬"
+  echo "Wi-Fi를 켰어요"
 fi
 `,
   },
@@ -143,15 +146,15 @@ fi
 # @msm-category: 시스템
 # @msm-description: blueutil 필요 — 없으면: brew install blueutil
 if ! command -v blueutil >/dev/null 2>&1; then
-  echo "blueutil이 필요합니다: brew install blueutil" >&2
+  echo "blueutil이 설치되어 있지 않아요. 터미널에서 brew install blueutil로 설치해주세요" >&2
   exit 1
 fi
 if [ "$(blueutil -p)" = "1" ]; then
   blueutil -p 0
-  echo "블루투스 끔"
+  echo "블루투스를 껐어요"
 else
   blueutil -p 1
-  echo "블루투스 켬"
+  echo "블루투스를 켰어요"
 fi
 `,
   },
@@ -168,7 +171,7 @@ fi
 # @msm-description: 화면이 꺼지지 않도록 1시간 동안 막습니다 (백그라운드로 실행되고 이 스크립트는 바로 끝납니다)
 nohup caffeinate -d -t 3600 > /dev/null 2>&1 &
 disown
-echo "1시간 동안 화면이 꺼지지 않습니다"
+echo "1시간 동안 화면이 꺼지지 않게 해뒀어요"
 `,
   },
   {
@@ -209,6 +212,7 @@ echo "macOS $(sw_vers -productVersion) · $(uptime | sed 's/.*up //;s/,.*//') �
 # @msm-icon: 🔇
 # @msm-category: 시스템
 osascript -e 'set volume output muted (not (output muted of (get volume settings)))'
+echo "음소거 상태를 바꿨어요"
 `,
   },
 
@@ -227,10 +231,10 @@ osascript -e 'set volume output muted (not (output muted of (get volume settings
 current=$(defaults read com.apple.finder AppleShowAllFiles 2>/dev/null)
 if [ "$current" = "1" ] || [ "$current" = "YES" ] || [ "$current" = "true" ]; then
   defaults write com.apple.finder AppleShowAllFiles -bool false
-  echo "숨김 파일 다시 숨김"
+  echo "숨김 파일을 다시 숨겼어요"
 else
   defaults write com.apple.finder AppleShowAllFiles -bool true
-  echo "숨김 파일 표시함"
+  echo "숨김 파일을 보이게 했어요"
 fi
 killall Finder
 `,
@@ -248,10 +252,10 @@ killall Finder
 current=$(defaults read com.apple.finder CreateDesktop 2>/dev/null)
 if [ "$current" = "0" ]; then
   defaults write com.apple.finder CreateDesktop -bool true
-  echo "데스크탑 아이콘 표시함"
+  echo "데스크탑 아이콘을 보이게 했어요"
 else
   defaults write com.apple.finder CreateDesktop -bool false
-  echo "데스크탑 아이콘 숨김"
+  echo "데스크탑 아이콘을 숨겼어요"
 fi
 killall Finder
 `,
@@ -267,7 +271,7 @@ killall Finder
 # @msm-icon: 🗑️
 # @msm-category: Finder
 osascript -e 'tell application "Finder" to empty trash'
-echo "휴지통을 비웠습니다"
+echo "휴지통을 비웠어요"
 `,
   },
   {
@@ -294,7 +298,7 @@ for f in *; do
   esac
   moved=$((moved + 1))
 done
-echo "$moved개 파일 정리 완료"
+echo "파일 $moved개를 정리했어요"
 `,
   },
   {
@@ -310,7 +314,7 @@ echo "$moved개 파일 정리 완료"
 mkdir -p ~/Pictures/Screenshots
 defaults write com.apple.screencapture location ~/Pictures/Screenshots
 killall SystemUIServer
-echo "스크린샷 저장 위치 변경됨"
+echo "스크린샷 저장 위치를 바꿨어요"
 `,
   },
   {
@@ -324,6 +328,7 @@ echo "스크린샷 저장 위치 변경됨"
 # @msm-icon: 🖼️
 # @msm-category: Finder
 screencapture -c
+echo "화면 전체를 클립보드에 담았어요"
 `,
   },
   {
@@ -337,6 +342,7 @@ screencapture -c
 # @msm-icon: ✂️
 # @msm-category: Finder
 screencapture -ic
+echo "선택한 영역을 클립보드에 담았어요"
 `,
   },
   {
@@ -351,10 +357,11 @@ screencapture -ic
 # @msm-category: Finder
 folder=$(osascript -e 'tell application "Finder" to POSIX path of (target of front window as alias)' 2>/dev/null)
 if [ -z "$folder" ]; then
-  echo "열려 있는 Finder 창이 없습니다" >&2
+  echo "열려 있는 Finder 창을 찾지 못했어요" >&2
   exit 1
 fi
 open -a Terminal "$folder"
+echo "폴더를 터미널로 열었어요"
 `,
   },
 
@@ -370,7 +377,7 @@ open -a Terminal "$folder"
 # @msm-icon: 🔠
 # @msm-category: 클립보드
 pbpaste | tr '[:lower:]' '[:upper:]' | pbcopy
-echo "변환 완료"
+echo "대문자로 바꿨어요"
 `,
   },
   {
@@ -384,7 +391,7 @@ echo "변환 완료"
 # @msm-icon: 🔡
 # @msm-category: 클립보드
 pbpaste | tr '[:upper:]' '[:lower:]' | pbcopy
-echo "변환 완료"
+echo "소문자로 바꿨어요"
 `,
   },
   {
@@ -401,9 +408,9 @@ echo "변환 완료"
 set -o pipefail
 if pretty=$(pbpaste | python3 -m json.tool); then
   echo -n "$pretty" | pbcopy
-  echo "정리 완료"
+  echo "JSON을 보기 좋게 정리했어요"
 else
-  echo "유효한 JSON이 아닙니다" >&2
+  echo "클립보드 내용이 올바른 JSON이 아니에요" >&2
   exit 1
 fi
 `,
@@ -419,7 +426,7 @@ fi
 # @msm-icon: ➡️
 # @msm-category: 클립보드
 pbpaste | tr '\\n' ' ' | tr -s ' ' | sed 's/^ *//;s/ *$//' | pbcopy
-echo "합치기 완료"
+echo "한 줄로 합쳤어요"
 `,
   },
   {
@@ -436,7 +443,7 @@ echo "합치기 완료"
 url=$(pbpaste)
 title=$(msm-ask "링크 제목을 입력하세요")
 if [ -z "$title" ]; then
-  echo "취소됨"
+  echo "취소했어요"
   exit 0
 fi
 echo -n "[$title]($url)" | pbcopy
@@ -472,16 +479,16 @@ echo "$id"
 # @msm-category: 개발자
 port=$(msm-ask "종료할 포트 번호")
 if [ -z "$port" ]; then
-  echo "취소됨"
+  echo "취소했어요"
   exit 0
 fi
 pids=$(lsof -ti:"$port")
 if [ -z "$pids" ]; then
-  echo "포트 $port 를 쓰는 프로세스가 없습니다"
+  echo "포트 $port를 쓰는 프로세스를 찾지 못했어요"
   exit 0
 fi
 echo "$pids" | xargs kill -9
-echo "포트 $port 프로세스 종료함"
+echo "포트 $port를 쓰던 프로세스를 종료했어요"
 `,
   },
   {
@@ -498,13 +505,13 @@ echo "포트 $port 프로세스 종료함"
 target=$(msm-ask "정리할 폴더 경로 (예: ~/Projects)")
 target="\${target/#\\~/\$HOME}"
 if [ -z "$target" ] || [ ! -d "$target" ]; then
-  echo "유효한 폴더가 아닙니다" >&2
+  echo "그 폴더를 찾지 못했어요" >&2
   exit 1
 fi
-msm-confirm "\\"$target\\" 아래 모든 node_modules를 정말 삭제할까요?" || { echo "취소됨"; exit 0; }
+msm-confirm "\\"$target\\" 아래 모든 node_modules를 정말 삭제할까요?" || { echo "취소했어요"; exit 0; }
 count=$(find "$target" -type d -name node_modules -prune -print | wc -l | tr -d ' ')
 find "$target" -type d -name node_modules -prune -exec rm -rf {} +
-echo "$count 개의 node_modules 삭제함"
+echo "node_modules $count개를 삭제했어요"
 `,
   },
   {
@@ -517,9 +524,9 @@ echo "$count 개의 node_modules 삭제함"
 # @msm-name: Xcode DerivedData 삭제
 # @msm-icon: 🧱
 # @msm-category: 개발자
-msm-confirm "Xcode DerivedData를 삭제할까요?" || { echo "취소됨"; exit 0; }
+msm-confirm "Xcode DerivedData를 삭제할까요?" || { echo "취소했어요"; exit 0; }
 rm -rf ~/Library/Developer/Xcode/DerivedData/*
-echo "DerivedData 삭제 완료"
+echo "DerivedData를 삭제했어요"
 `,
   },
   {
@@ -535,18 +542,18 @@ echo "DerivedData 삭제 완료"
 repo=$(msm-ask "git 저장소 경로 (예: ~/Projects/myapp)")
 repo="\${repo/#\\~/\$HOME}"
 if [ ! -d "$repo/.git" ]; then
-  echo "git 저장소가 아닙니다: $repo" >&2
+  echo "git 저장소를 찾지 못했어요: $repo" >&2
   exit 1
 fi
 cd "$repo" || exit 1
 base=$(git symbolic-ref --short HEAD)
 branches=$(git branch --merged "$base" | grep -v '^\\*' | sed 's/^  *//' | grep -vx "$base")
 if [ -z "$branches" ]; then
-  echo "정리할 브랜치가 없습니다"
+  echo "정리할 브랜치가 없어요"
   exit 0
 fi
 echo "$branches" | xargs -n 1 git branch -d
-echo "병합된 브랜치 정리 완료"
+echo "병합된 브랜치를 정리했어요"
 `,
   },
   {
@@ -586,7 +593,7 @@ info=$(osascript -e 'tell application "Music"
   end if
 end tell' 2>/dev/null)
 if [ -z "$info" ]; then
-  echo "재생 중인 곡이 없습니다"
+  echo "지금 재생 중인 곡이 없어요"
   exit 0
 fi
 echo -n "$info" | pbcopy
@@ -609,7 +616,7 @@ echo "$info"
 open -a "Slack" 2>/dev/null
 open -a "Mail" 2>/dev/null
 open -a "Calendar" 2>/dev/null
-echo "업무 앱 실행함"
+echo "업무용 앱을 열었어요"
 `,
   },
   {
@@ -624,7 +631,7 @@ echo "업무 앱 실행함"
 # @msm-category: 생산성
 title=$(msm-ask "미리알림 내용")
 if [ -z "$title" ]; then
-  echo "취소됨"
+  echo "취소했어요"
   exit 0
 fi
 osascript - "$title" <<'APPLESCRIPT'
@@ -633,7 +640,7 @@ on run argv
   tell application "Reminders" to make new reminder with properties {name:t}
 end run
 APPLESCRIPT
-echo "추가함: $title"
+echo "미리알림에 추가했어요: $title"
 `,
   },
 ];

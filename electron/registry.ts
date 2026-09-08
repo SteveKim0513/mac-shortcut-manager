@@ -100,7 +100,7 @@ class ShortcutRegistry {
         this.registeredAccelerators.set(meta.filePath, meta.hotkey);
         meta.hotkeyError = null;
       } else {
-        meta.hotkeyError = '단축키 등록 실패 — 다른 앱이 이미 사용 중일 수 있습니다';
+        meta.hotkeyError = '이 단축키는 이미 다른 앱이 쓰고 있는 것 같아요. 다른 조합으로 시도해보세요';
       }
     }
   }

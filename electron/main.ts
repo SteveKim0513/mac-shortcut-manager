@@ -290,7 +290,7 @@ ipcMain.handle('settings:get', () => settings);
 ipcMain.handle('settings:set', (_e, partial: Partial<AppSettings>) => {
   if (typeof partial.paletteHotkey === 'string' && partial.paletteHotkey !== settings.paletteHotkey) {
     const ok = applyPaletteHotkey(partial.paletteHotkey);
-    if (!ok) return { settings, error: '단축키 등록 실패 — 다른 앱이 이미 사용 중일 수 있습니다' };
+    if (!ok) return { settings, error: '이 단축키는 이미 다른 앱이 쓰고 있는 것 같아요. 다른 조합으로 시도해보세요' };
   }
   if (typeof partial.openAtLogin === 'boolean') settings = { ...settings, openAtLogin: partial.openAtLogin };
   if (typeof partial.hideDockIcon === 'boolean') settings = { ...settings, hideDockIcon: partial.hideDockIcon };

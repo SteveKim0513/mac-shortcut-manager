@@ -37,7 +37,7 @@ export default function SettingsDialog({ onClose, onCheckForUpdates, onSaved }: 
                 value={settings.paletteHotkey}
                 error={hotkeyError}
                 allowClear={false}
-                onChange={(next) => next && void update({ paletteHotkey: next }, `팔레트 단축키 변경됨: ${next}`)}
+                onChange={(next) => next && void update({ paletteHotkey: next }, `팔레트 단축키를 "${next}"로 바꿨어요`)}
               />
             </div>
             {hotkeyError && <div className="manager-hint warn">{hotkeyError}</div>}
@@ -48,7 +48,10 @@ export default function SettingsDialog({ onClose, onCheckForUpdates, onSaved }: 
                 type="checkbox"
                 checked={settings.openAtLogin}
                 onChange={(e) =>
-                  void update({ openAtLogin: e.target.checked }, e.target.checked ? '로그인 시 자동 실행 켬' : '로그인 시 자동 실행 끔')
+                  void update(
+                    { openAtLogin: e.target.checked },
+                    e.target.checked ? '로그인할 때 자동으로 실행되게 했어요' : '로그인 시 자동 실행을 껐어요',
+                  )
                 }
               />
             </label>
@@ -59,7 +62,10 @@ export default function SettingsDialog({ onClose, onCheckForUpdates, onSaved }: 
                 type="checkbox"
                 checked={settings.hideDockIcon}
                 onChange={(e) =>
-                  void update({ hideDockIcon: e.target.checked }, e.target.checked ? 'Dock 숨김' : 'Dock 표시')
+                  void update(
+                    { hideDockIcon: e.target.checked },
+                    e.target.checked ? 'Dock 아이콘을 숨겼어요' : 'Dock 아이콘을 다시 보여줄게요',
+                  )
                 }
               />
             </label>

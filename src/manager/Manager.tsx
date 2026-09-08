@@ -101,7 +101,7 @@ export default function Manager() {
     if (!selectedId) return;
     await window.msm.saveShortcut(selectedId, content);
     setSavedContent(content);
-    notify('저장됨');
+    notify('변경사항을 저장했어요');
   }
 
   async function handleRun() {
@@ -120,14 +120,14 @@ export default function Manager() {
     await window.msm.deleteShortcut(selectedId);
     setSelectedId(null);
     setConfirmingDelete(false);
-    notify(`삭제됨: ${name}`);
+    notify(`"${name}" 단축어를 삭제했어요`);
   }
 
   async function handleCreateSubmit(name: string) {
     const meta = await window.msm.createShortcut(name);
     setCreating(false);
     setSelectedId(meta.id);
-    notify(`단축어 생성됨: ${meta.name}`);
+    notify(`"${meta.name}" 단축어를 만들었어요`);
   }
 
   async function handleAiCreate(name: string, code: string) {
@@ -138,7 +138,7 @@ export default function Manager() {
     await window.msm.saveShortcut(meta.id, code);
     setAiAssistOpen(false);
     setSelectedId(meta.id);
-    notify(`AI로 단축어 생성됨: ${meta.name}`);
+    notify(`AI로 "${meta.name}" 단축어를 만들었어요`);
   }
 
   async function handlePresetCreate(preset: Preset) {
@@ -146,7 +146,7 @@ export default function Manager() {
     await window.msm.saveShortcut(meta.id, preset.script);
     setPresetsOpen(false);
     setSelectedId(meta.id);
-    notify(`프리셋으로 생성됨: ${preset.name}`);
+    notify(`"${preset.name}" 프리셋을 추가했어요`);
   }
 
   async function handleSetHotkey(next: string | null) {
@@ -157,7 +157,7 @@ export default function Manager() {
     const fresh = await window.msm.readShortcut(selectedId);
     setContent(fresh);
     setSavedContent(fresh);
-    notify(next ? `단축키 등록됨: ${next}` : '단축키 해제됨');
+    notify(next ? `단축키를 "${next}"로 설정했어요` : '단축키를 해제했어요');
   }
 
   return (
@@ -260,8 +260,8 @@ export default function Manager() {
             {runResult && (
               <div className={`manager-output ${runResult.success ? 'success' : 'failure'}`}>
                 {runResult.success
-                  ? runResult.stdout || '(출력 없음) 실행 완료'
-                  : `${runResult.stderr || `종료 코드 ${runResult.code}`}`}
+                  ? runResult.stdout || '잘 실행됐어요'
+                  : runResult.stderr || `문제가 생겼어요 (종료 코드 ${runResult.code})`}
               </div>
             )}
           </>
@@ -283,7 +283,7 @@ export default function Manager() {
       )}
       {confirmingDelete && selected && (
         <ConfirmDialog
-          message={`"${selected.name}"을(를) 삭제할까요? 이 작업은 되돌릴 수 없습니다.`}
+          message={`"${selected.name}"을(를) 삭제할까요? 이 작업은 되돌릴 수 없어요.`}
           onConfirm={() => void handleConfirmDelete()}
           onCancel={() => setConfirmingDelete(false)}
         />

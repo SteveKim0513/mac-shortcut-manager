@@ -32,15 +32,15 @@ export default function UpdateStatusPopup({ status, onClose, onInstall, onRetry 
       sub = '잠시만요, 최신 버전을 확인하고 있어요.';
       break;
     case 'available':
-      title = `새 버전 v${status.version} 발견`;
-      sub = '내려받는 중…';
+      title = `새 버전 v${status.version}이 나왔어요`;
+      sub = '받아오는 중이에요…';
       break;
     case 'downloading':
-      title = `새 버전 v${status.version} 내려받는 중`;
+      title = `v${status.version} 받는 중이에요`;
       sub = `${status.percent}%`;
       break;
     case 'up-to-date':
-      title = '최신 버전입니다';
+      title = '최신 버전을 쓰고 계세요';
       sub = `v${status.version}`;
       actions = (
         <button className="primary" onClick={onClose}>
@@ -49,8 +49,8 @@ export default function UpdateStatusPopup({ status, onClose, onInstall, onRetry 
       );
       break;
     case 'downloaded':
-      title = `v${status.version} 준비 완료`;
-      sub = '지금 재시동하면 바로 적용됩니다.';
+      title = `v${status.version} 준비됐어요`;
+      sub = '지금 재시동하면 바로 적용돼요.';
       actions = (
         <>
           <button onClick={onClose}>나중에</button>

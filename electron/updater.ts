@@ -47,8 +47,8 @@ async function promptRestart(version: string) {
   const win = getWin();
   const opts = {
     type: 'info' as const,
-    message: `새 버전 v${version}이 준비되었습니다`,
-    detail: '지금 재시동하면 바로 적용됩니다. 나중에 해도 다음에 앱을 종료할 때 자동으로 적용돼요.',
+    message: `새 버전 v${version}이 준비됐어요`,
+    detail: '지금 재시동하면 바로 적용돼요. 나중에 해도 다음에 앱을 종료할 때 자동으로 적용돼요.',
     buttons: ['지금 재시동', '나중에'],
     defaultId: 0,
     cancelId: 1,
