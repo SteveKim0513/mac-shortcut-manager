@@ -13,6 +13,7 @@ const HELPERS: Record<string, string> = {
 osascript - "$1" <<'APPLESCRIPT'
 on run argv
   set q to item 1 of argv
+  activate
   try
     display dialog q default answer "" with title "Shortcut Manager" buttons {"취소", "확인"} default button "확인"
     return text returned of result
@@ -27,6 +28,7 @@ APPLESCRIPT
 answer=$(osascript - "$1" <<'APPLESCRIPT'
 on run argv
   set q to item 1 of argv
+  activate
   try
     display dialog q with title "Shortcut Manager" buttons {"아니요", "예"} default button "예"
     return button returned of result
@@ -48,8 +50,9 @@ on run argv
   repeat with i from 2 to (count of argv)
     set end of opts to item i of argv
   end repeat
+  activate
   try
-    set choice to choose from list opts with title "Shortcut Manager" with prompt q
+    set choice to choose from list opts with title "Shortcut Manager" with prompt q OK button name "선택" cancel button name "취소" without multiple selections allowed
     if choice is false then return ""
     return item 1 of choice
   on error
