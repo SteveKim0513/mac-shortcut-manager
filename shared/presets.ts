@@ -592,3 +592,591 @@ pmset -g batt | grep -Eo "[0-9]+%.*"
 `,
   },
 ];
+
+// A preset group installs several single-script presets in one action and
+// tags each with the same `@msm-group`, so the manager sidebar can show them
+// as one folder (Manager.tsx's folder view — only rendered once 2+ installed
+// shortcuts share a group, never a standalone concept of its own here).
+export interface PresetGroup {
+  id: string;
+  name: string;
+  icon: string;
+  category: string;
+  summary: string;
+  presets: Preset[];
+}
+
+export function isPresetGroup(entry: Preset | PresetGroup): entry is PresetGroup {
+  return 'presets' in entry;
+}
+
+export const PRESET_GROUPS: PresetGroup[] = [
+  {
+    id: 'gtd-work-tracker',
+    name: '업무 관리 (GTD)',
+    icon: '🚩',
+    category: '업무 관리',
+    summary:
+      '등록 → 시작 → 완료로 하루 업무를 미리알림에 기록하고, 소요시간까지 자동으로 남겨 팀과 공유해요. 단축어 7개가 한 번에 설치돼요.',
+    presets: [
+      {
+        id: 'gtd-register',
+        name: '업무 등록',
+        icon: '📥',
+        category: '업무 관리',
+        summary: '할 일을 등록해요 — 어느 프로젝트인지만 고르면 끝',
+        script: `#!/bin/zsh
+# @msm-hotkey: Alt+1
+# @msm-name: 업무 등록
+# @msm-icon: 📥
+# @msm-category: 업무 관리
+# @msm-group: 업무 관리
+# @msm-description: 할 일을 등록합니다. 어디 프로젝트에 속하는지만 고르면 끝 — 오늘 할지는 나중에 "시작"(Alt+2)에서 정해요. 기존에 쓰던 다른 미리알림 리스트는 건드리지 않아요 — 이 시스템은 "📥"/"🗂" 접두사가 붙은 리스트만 씁니다.
+
+INBOX="📥 Inbox"
+
+title=$(msm-ask "무엇을 할까요?")
+if [ -z "$title" ]; then
+  echo "취소했어요"
+  exit 0
+fi
+
+own_lists_raw=$(osascript <<'APPLESCRIPT'
+tell application "Reminders"
+  set out to {}
+  repeat with l in lists
+    set ln to name of l
+    if ln starts with "📥" or ln starts with "🗂" then
+      set end of out to ln
+    end if
+  end repeat
+end tell
+set AppleScript's text item delimiters to linefeed
+return out as string
+APPLESCRIPT
+)
+
+own_lists=()
+has_inbox="false"
+while IFS= read -r ln; do
+  if [ -n "$ln" ]; then
+    own_lists+=("$ln")
+    [ "$ln" = "$INBOX" ] && has_inbox="true"
+  fi
+done <<< "$own_lists_raw"
+
+# Inbox가 아직 없으면 만든다 (최초 1회뿐 — 목록 조회에 묻어가서 별도 확인 왕복이 없다)
+if [ "$has_inbox" != "true" ]; then
+  osascript - "$INBOX" <<'APPLESCRIPT' >/dev/null
+on run argv
+  set n to item 1 of argv
+  tell application "Reminders" to make new list with properties {name:n}
+end run
+APPLESCRIPT
+  own_lists=("$INBOX" "\${own_lists[@]}")
+fi
+
+if [ \${#own_lists[@]} -le 1 ]; then
+  project="$INBOX"
+else
+  project=$(msm-choose "어디에 등록할까요?" "\${own_lists[@]}")
+  [ -z "$project" ] && project="$INBOX"
+fi
+
+osascript - "$title" "$project" <<'APPLESCRIPT' >/dev/null
+on run argv
+  set t to item 1 of argv
+  set p to item 2 of argv
+  tell application "Reminders"
+    make new reminder at list p with properties {name:t}
+  end tell
+end run
+APPLESCRIPT
+
+echo "등록했어요: \${title} (\${project})"
+`,
+      },
+      {
+        id: 'gtd-start',
+        name: '업무 시작',
+        icon: '▶️',
+        category: '업무 관리',
+        summary: '등록해둔 일 중 지금 손대는 걸 시작으로 표시해요 (여러 개 동시 가능)',
+        script: `#!/bin/zsh
+# @msm-hotkey: Alt+2
+# @msm-name: 업무 시작
+# @msm-icon: ▶️
+# @msm-category: 업무 관리
+# @msm-group: 업무 관리
+# @msm-description: 등록해둔 일 중 지금 손을 대는 것을 고릅니다. 여러 번 눌러 여러 건을 동시에 진행중으로 둘 수 있어요. 미리알림의 알림 배너가 "시작했다"는 확인 알림 역할을 대신 해줘요.
+
+data=$(osascript <<'APPLESCRIPT'
+tell application "Reminders"
+  set ownLists to {}
+  repeat with l in lists
+    set ln to name of l
+    if ln starts with "📥" or ln starts with "🗂" then
+      set end of ownLists to l
+    end if
+  end repeat
+  set out to {}
+  repeat with L in ownLists
+    set nms to name of every reminder of L
+    set cds to completed of every reminder of L
+    set dds to due date of every reminder of L
+    repeat with i from 1 to count of nms
+      if (item i of cds) is false then
+        if (item i of dds) is missing value then
+          set end of out to "W|" & (item i of nms)
+        else
+          set end of out to "O|" & (item i of nms)
+        end if
+      end if
+    end repeat
+  end repeat
+end tell
+set AppleScript's text item delimiters to linefeed
+return out as string
+APPLESCRIPT
+)
+
+waiting_names=()
+ongoing_count=0
+while IFS='|' read -r tag nm; do
+  case "$tag" in
+    W) waiting_names+=("$nm") ;;
+    O) ongoing_count=$((ongoing_count + 1)) ;;
+  esac
+done <<< "$data"
+
+if [ \${#waiting_names[@]} -eq 0 ]; then
+  echo "아직 등록한 일이 없어요 — Alt+1로 먼저 등록해보세요"
+  exit 0
+fi
+
+if [ "$ongoing_count" -ge 3 ]; then
+  msm-confirm "지금 \${ongoing_count}개 진행중이에요. 하나 더 시작할까요?" || { echo "취소했어요"; exit 0; }
+fi
+
+chosen=$(msm-choose "무엇을 시작할까요?" "\${waiting_names[@]}")
+if [ -z "$chosen" ]; then
+  echo "취소했어요"
+  exit 0
+fi
+
+osascript - "$chosen" <<'APPLESCRIPT' >/dev/null
+on run argv
+  set nm to item 1 of argv
+  tell application "Reminders"
+    set ownLists to {}
+    repeat with l in lists
+      set ln to name of l
+      if ln starts with "📥" or ln starts with "🗂" then
+        set end of ownLists to l
+      end if
+    end repeat
+    repeat with L in ownLists
+      set matches to (every reminder of L whose name is nm and completed is false)
+      if (count of matches) > 0 then
+        set due date of (item 1 of matches) to (current date)
+        exit repeat
+      end if
+    end repeat
+  end tell
+end run
+APPLESCRIPT
+
+now_label=$(date "+%H:%M")
+echo "시작했어요: \${chosen} (\${now_label})"
+`,
+      },
+      {
+        id: 'gtd-complete',
+        name: '업무 완료',
+        icon: '✅',
+        category: '업무 관리',
+        summary: '시작해둔 일 중 끝난 걸 닫아요 — 소요시간이 자동으로 남아요',
+        script: `#!/bin/zsh
+# @msm-hotkey: Alt+3
+# @msm-name: 업무 완료
+# @msm-icon: ✅
+# @msm-category: 업무 관리
+# @msm-group: 업무 관리
+# @msm-description: 진행중인 일 중 끝난 것을 골라 닫습니다. 시작(Alt+2)한 것만 목록에 나오고, 완료하면 소요시간이 자동으로 기록돼요.
+
+data=$(osascript <<'APPLESCRIPT'
+tell application "Reminders"
+  set ownLists to {}
+  repeat with l in lists
+    set ln to name of l
+    if ln starts with "📥" or ln starts with "🗂" then
+      set end of ownLists to l
+    end if
+  end repeat
+  set out to {}
+  repeat with L in ownLists
+    set nms to name of every reminder of L
+    set cds to completed of every reminder of L
+    set dds to due date of every reminder of L
+    repeat with i from 1 to count of nms
+      if (item i of cds) is false and (item i of dds) is not missing value then
+        set end of out to (item i of nms)
+      end if
+    end repeat
+  end repeat
+end tell
+set AppleScript's text item delimiters to linefeed
+return out as string
+APPLESCRIPT
+)
+
+if [ -z "$data" ]; then
+  echo "아직 시작한 일이 없어요 — Alt+2로 먼저 시작해보세요"
+  exit 0
+fi
+
+ongoing_names=()
+while IFS= read -r nm; do
+  [ -n "$nm" ] && ongoing_names+=("$nm")
+done <<< "$data"
+
+chosen=$(msm-choose "무엇을 완료할까요?" "\${ongoing_names[@]}")
+if [ -z "$chosen" ]; then
+  echo "취소했어요"
+  exit 0
+fi
+
+diff_sec=$(osascript - "$chosen" <<'APPLESCRIPT'
+on run argv
+  set nm to item 1 of argv
+  tell application "Reminders"
+    set ownLists to {}
+    repeat with l in lists
+      set ln to name of l
+      if ln starts with "📥" or ln starts with "🗂" then
+        set end of ownLists to l
+      end if
+    end repeat
+    repeat with L in ownLists
+      set matches to (every reminder of L whose name is nm and completed is false)
+      if (count of matches) > 0 then
+        set r to item 1 of matches
+        set startD to due date of r
+        set completed of r to true
+        set endD to completion date of r
+        return (endD - startD) as string
+      end if
+    end repeat
+  end tell
+  return "0"
+end run
+APPLESCRIPT
+)
+
+hours=$((diff_sec / 3600))
+mins=$(( (diff_sec % 3600) / 60 ))
+if [ "$hours" -gt 0 ]; then
+  dur="\${hours}시간 \${mins}분"
+else
+  dur="\${mins}분"
+fi
+
+echo "완료했어요: \${chosen} (\${dur}) 🎉"
+`,
+      },
+      {
+        id: 'gtd-status',
+        name: '업무 현황보기',
+        icon: '📊',
+        category: '업무 관리',
+        summary: '대기·진행중·오늘 완료가 몇 건인지 한눈에 확인해요',
+        script: `#!/bin/zsh
+# @msm-hotkey: Alt+4
+# @msm-name: 업무 현황보기
+# @msm-icon: 📊
+# @msm-category: 업무 관리
+# @msm-group: 업무 관리
+# @msm-description: 지금 대기·진행중·오늘 완료가 몇 건인지 한눈에 보여줍니다.
+
+data=$(osascript <<'APPLESCRIPT'
+tell application "Reminders"
+  set ownLists to {}
+  repeat with l in lists
+    set ln to name of l
+    if ln starts with "📥" or ln starts with "🗂" then
+      set end of ownLists to l
+    end if
+  end repeat
+  set out to {}
+  repeat with L in ownLists
+    set nms to name of every reminder of L
+    set cds to completed of every reminder of L
+    set dds to due date of every reminder of L
+    set eds to completion date of every reminder of L
+    set todayStart to (current date) - (time of (current date))
+    repeat with i from 1 to count of nms
+      if (item i of cds) is false then
+        if (item i of dds) is missing value then
+          set end of out to "W|" & (item i of nms)
+        else
+          set diffSec to (current date) - (item i of dds)
+          set end of out to "O|" & (item i of nms) & "|" & diffSec
+        end if
+      else
+        set ed to item i of eds
+        if ed is not missing value and ed ≥ todayStart then
+          set end of out to "D|" & (item i of nms)
+        end if
+      end if
+    end repeat
+  end repeat
+end tell
+set AppleScript's text item delimiters to linefeed
+return out as string
+APPLESCRIPT
+)
+
+waiting=0
+ongoing=0
+done_today=0
+detail=""
+while IFS='|' read -r tag nm sec; do
+  case "$tag" in
+    W) waiting=$((waiting + 1)) ;;
+    D) done_today=$((done_today + 1)) ;;
+    O)
+      ongoing=$((ongoing + 1))
+      h=$((sec / 3600)); m=$(( (sec % 3600) / 60 ))
+      if [ "$h" -gt 0 ]; then dur="\${h}시간 \${m}분째"; else dur="\${m}분째"; fi
+      detail="\${detail}· \${nm} (\${dur})
+"
+      ;;
+  esac
+done <<< "$data"
+detail="\${detail%$'\\n'}"
+
+summary="진행중 \${ongoing}개 · 완료 \${done_today}개 · 대기 \${waiting}개"
+if [ "$ongoing" -gt 0 ] && [ "$ongoing" -le 3 ]; then
+  echo "\${summary}
+\${detail}"
+else
+  echo "$summary"
+fi
+`,
+      },
+      {
+        id: 'gtd-share',
+        name: '업무 공유하기',
+        icon: '📤',
+        category: '업무 관리',
+        summary: '오늘 완료·진행중·대기 현황을 소요시간과 함께 클립보드로 복사해요',
+        script: `#!/bin/zsh
+# @msm-hotkey: Alt+5
+# @msm-name: 업무 공유하기
+# @msm-icon: 📤
+# @msm-category: 업무 관리
+# @msm-group: 업무 관리
+# @msm-description: 오늘 완료·진행중·대기 현황을 소요시간과 함께 정리해 클립보드에 복사합니다. 팀 채널에 붙여넣기만 하면 돼요. 매일 18:00에 자동으로도 실행돼요.
+# @msm-trigger: schedule 18:00
+
+# Slack Incoming Webhook을 쓰고 싶으면 아래에 URL을 넣으세요 (비워두면 클립보드 복사만 해요)
+SLACK_WEBHOOK_URL=""
+
+fmt_dur() {
+  local sec=$1
+  local h=$((sec / 3600))
+  local m=$(( (sec % 3600) / 60 ))
+  if [ "$h" -gt 0 ]; then
+    echo "\${h}시간 \${m}분"
+  else
+    echo "\${m}분"
+  fi
+}
+
+data=$(osascript <<'APPLESCRIPT'
+tell application "Reminders"
+  set ownLists to {}
+  repeat with l in lists
+    set ln to name of l
+    if ln starts with "📥" or ln starts with "🗂" then
+      set end of ownLists to l
+    end if
+  end repeat
+  set todayStart to (current date) - (time of (current date))
+  set out to {}
+  repeat with L in ownLists
+    set nms to name of every reminder of L
+    set cds to completed of every reminder of L
+    set dds to due date of every reminder of L
+    set eds to completion date of every reminder of L
+    repeat with i from 1 to count of nms
+      set nm to item i of nms
+      if (item i of cds) is true then
+        set ed to item i of eds
+        if ed is not missing value and ed ≥ todayStart then
+          set sd to item i of dds
+          if sd is missing value then
+            set diffSec to 0
+          else
+            set diffSec to ed - sd
+          end if
+          set end of out to "D|" & nm & "|" & diffSec
+        end if
+      else
+        set sd to item i of dds
+        if sd is missing value then
+          set end of out to "W|" & nm
+        else
+          set diffSec to (current date) - sd
+          set end of out to "O|" & nm & "|" & diffSec
+        end if
+      end if
+    end repeat
+  end repeat
+end tell
+set AppleScript's text item delimiters to linefeed
+return out as string
+APPLESCRIPT
+)
+
+done_lines=""; done_count=0
+ongoing_lines=""; ongoing_count=0
+waiting_lines=""; waiting_count=0
+
+while IFS='|' read -r tag nm sec; do
+  [ -z "$tag" ] && continue
+  case "$tag" in
+    D)
+      done_count=$((done_count + 1))
+      done_lines="\${done_lines}- \${nm} ($(fmt_dur "$sec"))
+"
+      ;;
+    O)
+      ongoing_count=$((ongoing_count + 1))
+      ongoing_lines="\${ongoing_lines}- \${nm} ($(fmt_dur "$sec")째)
+"
+      ;;
+    W)
+      waiting_count=$((waiting_count + 1))
+      waiting_lines="\${waiting_lines}- \${nm}
+"
+      ;;
+  esac
+done <<< "$data"
+
+who=$(id -F 2>/dev/null)
+[ -z "$who" ] && who=$(whoami)
+dow_kr=(일 월 화 수 목 금 토)
+dow_idx=$(date "+%w")
+today_label="$(date "+%-m/%-d")(\${dow_kr[$((dow_idx + 1))]})"
+
+report="📅 \${today_label} 진행 현황 — \${who}
+✅ 완료 \${done_count}
+\${done_lines}🌀 진행중 \${ongoing_count}
+\${ongoing_lines}🗂 대기 \${waiting_count}
+\${waiting_lines}"
+
+echo -n "$report" | pbcopy
+
+if [ -n "$SLACK_WEBHOOK_URL" ]; then
+  payload=$(printf '%s' "$report" | python3 -c 'import json,sys;print(json.dumps({"text":sys.stdin.read()}))')
+  curl -s -X POST -H "Content-Type: application/json" -d "$payload" "$SLACK_WEBHOOK_URL" >/dev/null
+  echo "오늘 진행 현황을 클립보드에 복사하고 Slack에도 올렸어요"
+else
+  echo "오늘 진행 현황을 클립보드에 복사했어요 — 팀 채널에 붙여넣기(⌘V)만 하면 돼요"
+fi
+`,
+      },
+      {
+        id: 'gtd-project',
+        name: '프로젝트 등록',
+        icon: '🚀',
+        category: '업무 관리',
+        summary: '새 프로젝트(미리알림 리스트)를 만들어요',
+        script: `#!/bin/zsh
+# @msm-hotkey: Alt+6
+# @msm-name: 프로젝트 등록
+# @msm-icon: 🚀
+# @msm-category: 업무 관리
+# @msm-group: 업무 관리
+# @msm-description: 새 프로젝트(미리알림 리스트)를 만듭니다. 이름 앞에 "🗂 "를 자동으로 붙여요 — 이 표시가 있는 리스트만 업무 시스템이 스캔합니다. 이후 "업무 등록"(Alt+1)의 선택지에 바로 나타나요.
+
+raw_name=$(msm-ask "프로젝트 이름을 입력하세요")
+if [ -z "$raw_name" ]; then
+  echo "취소했어요"
+  exit 0
+fi
+
+name="🗂 \${raw_name}"
+
+exists=$(osascript - "$name" <<'APPLESCRIPT'
+on run argv
+  set n to item 1 of argv
+  tell application "Reminders"
+    return (exists list n)
+  end tell
+end run
+APPLESCRIPT
+)
+
+if [ "$exists" = "true" ]; then
+  echo "이미 있는 프로젝트예요: \${name}"
+  exit 0
+fi
+
+osascript - "$name" <<'APPLESCRIPT' >/dev/null
+on run argv
+  set n to item 1 of argv
+  tell application "Reminders" to make new list with properties {name:n}
+end run
+APPLESCRIPT
+
+echo "프로젝트를 만들었어요: \${name}"
+`,
+      },
+      {
+        id: 'gtd-normalize',
+        name: '업무 구조 정규화',
+        icon: '🧭',
+        category: '업무 관리',
+        summary: 'Inbox 리스트가 있는지 확인하고, 없을 때만 만들어요 (되돌리기 어려운 변경은 안 함)',
+        script: `#!/bin/zsh
+# @msm-hotkey: Alt+0
+# @msm-name: 업무 구조 정규화
+# @msm-icon: 🧭
+# @msm-category: 업무 관리
+# @msm-group: 업무 관리
+# @msm-description: 업무 시스템에 필요한 Inbox 리스트가 있는지 확인하고, 없을 때만 만들어요. 이미 되어 있으면 아무것도 묻지 않고 조용히 끝나요. 기존에 쓰던 다른 미리알림 리스트는 절대 건드리지 않아요.
+
+INBOX="📥 Inbox"
+
+has_inbox=$(osascript - "$INBOX" <<'APPLESCRIPT'
+on run argv
+  set n to item 1 of argv
+  tell application "Reminders"
+    return (exists list n)
+  end tell
+end run
+APPLESCRIPT
+)
+
+if [ "$has_inbox" = "true" ]; then
+  echo "이미 잘 되어 있어요 — 바꿀 게 없어요"
+  exit 0
+fi
+
+msm-confirm "업무 시스템에 필요한 Inbox 리스트가 아직 없어요. 만들까요?" || { echo "취소했어요"; exit 0; }
+
+osascript - "$INBOX" <<'APPLESCRIPT' >/dev/null
+on run argv
+  set n to item 1 of argv
+  tell application "Reminders" to make new list with properties {name:n}
+end run
+APPLESCRIPT
+
+echo "Inbox 리스트를 만들었어요"
+`,
+      },
+    ],
+  },
+];

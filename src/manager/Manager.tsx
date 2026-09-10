@@ -6,7 +6,7 @@ import CodeEditor from './CodeEditor';
 import NewShortcutDialog from './NewShortcutDialog';
 import AiAssistDialog from './AiAssistDialog';
 import PresetBrowserDialog from './PresetBrowserDialog';
-import type { Preset } from '../../shared/presets';
+import type { Preset, PresetGroup } from '../../shared/presets';
 import ConfirmDialog from './ConfirmDialog';
 import SettingsDialog from './SettingsDialog';
 import UpdateStatusPopup from './UpdateStatusPopup';
@@ -14,6 +14,9 @@ import Toast from './Toast';
 import './Manager.css';
 
 const UNCATEGORIZED = '미분류';
+// A `@msm-group` only becomes a sidebar folder once it actually groups
+// something — a single shortcut tagged with a group is just a shortcut.
+const MIN_FOLDER_SIZE = 2;
 
 export default function Manager() {
   const [items, setItems] = useState<ShortcutMeta[]>([]);
@@ -29,6 +32,7 @@ export default function Manager() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
 
   // Every action taken inside this window shows some visible confirmation —
   // a run shows a system notification (electron/notify.ts, from main), an
@@ -82,20 +86,54 @@ export default function Manager() {
   const selected = items.find((i) => i.id === selectedId) ?? null;
   const dirty = content !== savedContent;
 
-  const groups = useMemo(() => {
+  // Two layers, computed from nothing but each script's own header comments
+  // (the folder isn't a separate structure to drag things into — it's a
+  // live readout of `@msm-group`, same as the category headers below it
+  // already read `@msm-category`). A group only earns a folder once it
+  // actually groups 2+ installed shortcuts; a lone one just falls through
+  // to the ordinary category list like anything else.
+  const { folderGroups, categoryGroups } = useMemo(() => {
+    const byGroup = new Map<string, ShortcutMeta[]>();
+    for (const item of items) {
+      if (!item.group) continue;
+      if (!byGroup.has(item.group)) byGroup.set(item.group, []);
+      byGroup.get(item.group)!.push(item);
+    }
+    const inFolder = new Set<string>();
+    const folders: [string, ShortcutMeta[]][] = [];
+    for (const [tag, list] of byGroup) {
+      if (list.length < MIN_FOLDER_SIZE) continue;
+      list.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      folders.push([tag, list]);
+      for (const item of list) inFolder.add(item.id);
+    }
+    folders.sort(([a], [b]) => a.localeCompare(b, 'ko'));
+
     const byCategory = new Map<string, ShortcutMeta[]>();
     for (const item of items) {
+      if (inFolder.has(item.id)) continue;
       const key = item.category || UNCATEGORIZED;
       if (!byCategory.has(key)) byCategory.set(key, []);
       byCategory.get(key)!.push(item);
     }
     for (const list of byCategory.values()) list.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-    return [...byCategory.entries()].sort(([a], [b]) => {
+    const categories = [...byCategory.entries()].sort(([a], [b]) => {
       if (a === UNCATEGORIZED) return 1;
       if (b === UNCATEGORIZED) return -1;
       return a.localeCompare(b, 'ko');
     });
+
+    return { folderGroups: folders, categoryGroups: categories };
   }, [items]);
+
+  function toggleFolder(tag: string) {
+    setCollapsedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  }
 
   async function handleSave() {
     if (!selectedId) return;
@@ -149,6 +187,21 @@ export default function Manager() {
     notify(`"${preset.name}" 프리셋을 추가했어요`);
   }
 
+  // Same create+save pair as a single preset, just repeated per member —
+  // no new IPC path, matching how the single-preset install already reuses
+  // the plain create/save calls instead of a dedicated backend route.
+  async function handlePresetGroupCreate(group: PresetGroup) {
+    let firstId: string | null = null;
+    for (const preset of group.presets) {
+      const meta = await window.msm.createShortcut(preset.name);
+      await window.msm.saveShortcut(meta.id, preset.script);
+      if (!firstId) firstId = meta.id;
+    }
+    setPresetsOpen(false);
+    if (firstId) setSelectedId(firstId);
+    notify(`"${group.name}" 프리셋 ${group.presets.length}개를 추가했어요`);
+  }
+
   async function handleSetHotkey(next: string | null) {
     if (!selectedId) return;
     await window.msm.setHotkey(selectedId, next);
@@ -189,7 +242,38 @@ export default function Manager() {
               파일을 추가해보세요.
             </div>
           )}
-          {groups.map(([category, list]) => (
+          {folderGroups.map(([tag, list]) => {
+            const collapsed = collapsedFolders.has(tag);
+            return (
+              <div key={`folder-${tag}`} className="manager-folder">
+                <button
+                  type="button"
+                  className="manager-folder-header"
+                  aria-expanded={!collapsed}
+                  onClick={() => toggleFolder(tag)}
+                >
+                  <span className="manager-folder-caret">{collapsed ? '▸' : '▾'}</span>
+                  <span className="manager-folder-icon">📁</span>
+                  <span className="manager-folder-name">{tag}</span>
+                  <span className="manager-folder-count">{list.length}</span>
+                </button>
+                {!collapsed &&
+                  list.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`manager-item manager-item-nested${item.id === selectedId ? ' active' : ''}`}
+                      onClick={() => setSelectedId(item.id)}
+                    >
+                      <span className="manager-item-icon">{item.icon || '⚡'}</span>
+                      <span className="manager-item-name">{item.name}</span>
+                      {item.hotkey && <span className="kbd">{item.hotkey}</span>}
+                      {item.hotkeyError && <span className="manager-item-warn">⚠</span>}
+                    </div>
+                  ))}
+              </div>
+            );
+          })}
+          {categoryGroups.map(([category, list]) => (
             <div key={category}>
               <div className="manager-group-header">{category}</div>
               {list.map((item) => (
@@ -290,6 +374,7 @@ export default function Manager() {
       {presetsOpen && (
         <PresetBrowserDialog
           onCreate={(preset) => void handlePresetCreate(preset)}
+          onCreateGroup={(group) => void handlePresetGroupCreate(group)}
           onCancel={() => setPresetsOpen(false)}
         />
       )}

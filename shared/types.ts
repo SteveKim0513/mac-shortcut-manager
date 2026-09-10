@@ -7,6 +7,10 @@ export interface ShortcutMeta {
   icon: string | null;
   description: string | null;
   category: string | null;
+  /** Preset-bundle name, e.g. "업무 관리" — only set when installed as part of a
+   * multi-script preset group. Drives the sidebar's folder view (shown only
+   * when 2+ installed shortcuts share the same group). */
+  group: string | null;
   /** Raw `@msm-trigger` directive values, e.g. "schedule 09:00", "folder ~/Downloads". */
   triggers: string[];
   updatedAt: number;

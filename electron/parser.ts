@@ -5,8 +5,8 @@ import type { ShortcutMeta } from '../shared/types';
 // A shortcut's metadata lives inside the script itself as directive comments,
 // so the .sh file is the single source of truth — no sidecar JSON to drift
 // out of sync when someone renames/deletes the file outside the app.
-type DirectiveKey = 'name' | 'hotkey' | 'icon' | 'description' | 'category';
-const DIRECTIVE_RE = /^#\s*@msm-(name|hotkey|icon|description|category):\s*(.*?)\s*$/;
+type DirectiveKey = 'name' | 'hotkey' | 'icon' | 'description' | 'category' | 'group';
+const DIRECTIVE_RE = /^#\s*@msm-(name|hotkey|icon|description|category|group):\s*(.*?)\s*$/;
 // Unlike the fields above, a script may declare more than one trigger
 // (e.g. both `schedule 09:00` and `wake`), so these collect into an array
 // instead of overwriting a single field.
@@ -37,6 +37,7 @@ export function parseScript(filePath: string): ShortcutMeta {
     icon: fields.icon?.trim() || null,
     description: fields.description?.trim() || null,
     category: fields.category?.trim() || null,
+    group: fields.group?.trim() || null,
     triggers,
     updatedAt: stat.mtimeMs,
     hotkeyError: null,
