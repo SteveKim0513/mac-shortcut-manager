@@ -504,7 +504,8 @@ echo "$ssid 비밀번호를 클립보드에 복사했어요"
 # @msm-icon: 🌐
 # @msm-category: 인터넷
 local_ip=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)
-public_ip=$(curl -s https://api.ipify.org)
+public_ip=$(curl -s --max-time 5 https://api.ipify.org)
+[ -z "$public_ip" ] && public_ip="확인 못함(인터넷 연결을 확인해보세요)"
 result="로컬: $local_ip / 공인: $public_ip"
 echo -n "$result" | pbcopy
 echo "$result"
@@ -1080,8 +1081,12 @@ echo -n "$report" | pbcopy
 
 if [ -n "$SLACK_WEBHOOK_URL" ]; then
   payload=$(printf '%s' "$report" | python3 -c 'import json,sys;print(json.dumps({"text":sys.stdin.read()}))')
-  curl -s -X POST -H "Content-Type: application/json" -d "$payload" "$SLACK_WEBHOOK_URL" >/dev/null
-  echo "오늘 진행 현황을 클립보드에 복사하고 Slack에도 올렸어요"
+  slack_status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 -X POST -H "Content-Type: application/json" -d "$payload" "$SLACK_WEBHOOK_URL")
+  if [ "$slack_status" = "200" ]; then
+    echo "오늘 진행 현황을 클립보드에 복사하고 Slack에도 올렸어요"
+  else
+    echo "클립보드에는 복사했지만 Slack 전송은 실패했어요 (상태 코드 \${slack_status:-없음}) — Webhook 주소를 확인해보세요"
+  fi
 else
   echo "오늘 진행 현황을 클립보드에 복사했어요 — 팀 채널에 붙여넣기(⌘V)만 하면 돼요"
 fi
