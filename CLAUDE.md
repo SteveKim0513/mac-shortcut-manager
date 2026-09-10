@@ -5,6 +5,7 @@
 - 작업 전 `git status --short` 확인.
 - 새 기능을 만들기 전에 [PRINCIPLES.md](PRINCIPLES.md)를 읽는다 — script-only 원칙과 충돌하면 기능을 포기하거나 재설계한다.
 - 지금 방향이 궁금하면 [ROADMAP.md](ROADMAP.md) 참고.
+- 이 앱에서 만든 단축어를 Playbook(별도 프로젝트) 서비스로 옮기는 관계와 TODO는 [docs/playbook-graduation.md](docs/playbook-graduation.md) 참고 — 실제 승격 작업은 Playbook 쪽에서 하므로 이 저장소에서 뭔가를 자동으로 하지는 않는다.
 - 기존 사용자 변경사항을 덮어쓰거나 되돌리지 않는다.
 
 ## 질문과 실행 지시 구분
